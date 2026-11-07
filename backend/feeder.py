@@ -67,9 +67,13 @@ def _handle_command(command):
     symbol = (command.get('symbol') or '').upper()
     interval = command.get('interval') or '15m'
     market = command.get('market') or 'crypto'
-    provider = 'yahoo' if market == 'stock' else (command.get('provider') or 'coinbase')
     if not symbol:
         return
+    if market == 'stock':
+        from common.cache import get_stock_provider
+        provider = get_stock_provider(symbol)
+    else:
+        provider = command.get('provider') or 'coinbase'
 
     # Dedupe del arranque en frio: N clientes/replicas que entren a la misma sala
     # lanzan N comandos, pero la cola es de un solo consumidor. Si el primero ya

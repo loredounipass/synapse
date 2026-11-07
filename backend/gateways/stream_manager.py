@@ -1,4 +1,4 @@
-"""Gestor y orquestador de streams en tiempo real (Binance WS + Coinbase WS + Yahoo Finance WS).
+"""Gestor de streams en tiempo real de crypto y acciones.
 
 Centraliza la configuración y el cableado de callbacks para los streams
 de mercado en vivo, desacoplando app.py de los detalles de streaming.
@@ -15,11 +15,17 @@ from common import market_store
 from gateways.binance_stream import init_binance_stream
 from gateways.coinbase_stream import init_coinbase_stream
 from gateways.yahoo_stream import init_yahoo_stream
+from gateways.alpaca_stream import init_alpaca_stream
 from services.data_fetchers import (
     fetch_klines_and_volume, fetch_quote_volume_24h, update_ticker_cache,
     record_order_flow_trade,
 )
-from common.cache import store_payload, CRYPTO_SYMBOLS, STOCK_SYMBOLS
+from common.cache import (
+    store_payload,
+    CRYPTO_SYMBOLS,
+    STOCK_SYMBOLS,
+    ALPACA_STOCK_SYMBOLS,
+)
 from services.payload_builder import build_payload
 
 logger = logging.getLogger(__name__)
@@ -32,7 +38,7 @@ def _split_store_key(key):
 
     Formatos emitidos por los streams:
         'crypto:binance:ETHUSDT_15m' / 'crypto:coinbase:ETHUSDT_15m'
-        'stock:AAPL_15m'   (Yahoo, sin proveedor en la clave)
+        'stock:alpaca:AAPL_15m' / 'stock:yahoo:^NDX_15m'
     """
     parts = key.split(':')
     if len(parts) == 3:
@@ -138,19 +144,39 @@ def init_market_streams(socketio):
         STREAM_TIMEFRAMES,
     )
 
-    # STREAMING DE STOCKS VIA YAHOO FINANCE WS (wss://streamer.finance.yahoo.com):
-    # solo llegan QUOTES (protobuf en base64) cuando hay cambios reales de
-    # cotizacion. El WS actualiza el cierre de la vela viva y recalcula el payload;
-    # si Yahoo no envia nada (fin de semana, feriado), el polling REST sigue como
-    # respaldo sin ningun cambio de comportamiento.
-    init_yahoo_stream(
+    # Las acciones US se alimentan de trades IEX de Alpaca y recalculan solo
+    # payloads de salas stock:alpaca:*; crypto conserva sus streams separados.
+    init_alpaca_stream(
         socketio,
         {
-            'fetch_klines_vol': lambda s, iv, m: fetch_klines_and_volume(s, iv, m),
-            'build_payload': lambda s, iv, m, k, v: build_payload(s, iv, m, k, v),
+            'fetch_klines_vol': lambda s, iv, m: fetch_klines_and_volume(
+                s, iv, m, 'alpaca'
+            ),
+            'build_payload': lambda s, iv, m, k, v, p: build_payload(
+                s, iv, m, k, v, p
+            ),
             'store_payload': store_hook,
             'has_subscribers': subscribers_hook,
         },
-        sorted(STOCK_SYMBOLS),
+        sorted(ALPACA_STOCK_SYMBOLS),
+        STREAM_TIMEFRAMES,
+    )
+
+    # Yahoo queda como fallback solo para índices, forex y futuros no soportados
+    # como acciones individuales por Alpaca. Su protocolo antiguo permanece
+    # aislado de los feeds stock:alpaca:*.
+    init_yahoo_stream(
+        socketio,
+        {
+            'fetch_klines_vol': lambda s, iv, m: fetch_klines_and_volume(
+                s, iv, m, 'yahoo'
+            ),
+            'build_payload': lambda s, iv, m, k, v: build_payload(
+                s, iv, m, k, v, 'yahoo'
+            ),
+            'store_payload': store_hook,
+            'has_subscribers': subscribers_hook,
+        },
+        sorted(STOCK_SYMBOLS - ALPACA_STOCK_SYMBOLS),
         STREAM_TIMEFRAMES,
     )

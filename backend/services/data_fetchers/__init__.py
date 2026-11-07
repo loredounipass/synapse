@@ -23,6 +23,10 @@ from services.data_fetchers.coinbase_order_flow import (
 )
 from services.data_fetchers.coinbase_order_book import fetch_order_book_depth
 from services.data_fetchers.yahoo import fetch_yahoo_chart
+from services.data_fetchers.alpaca import (
+    fetch_alpaca_chart,
+    fetch_alpaca_latest_trade,
+)
 from services.data_fetchers.price_utils import (
     interval_seconds, fetch_yahoo_meta_price, fetch_last_price,
     fetch_klines_and_volume,
@@ -37,6 +41,7 @@ __all__ = [
     "record_order_flow_trade", "get_order_flow_trades",
     "fetch_order_book_depth",
     "fetch_yahoo_chart",
+    "fetch_alpaca_chart", "fetch_alpaca_latest_trade",
     "interval_seconds", "fetch_yahoo_meta_price", "fetch_last_price",
     "fetch_klines_and_volume",
 ]

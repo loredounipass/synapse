@@ -9,6 +9,7 @@ import logging
 
 from services.chat.memory import search_chat_history
 from services.chat.web_search import web_search
+from common.cache import get_stock_provider
 from database import chat_store
 
 logger = logging.getLogger(__name__)
@@ -30,9 +31,14 @@ def _resolve_feed_snapshot(data):
     """Devuelve (data, provider, available) consultando el feed cuando el
     snapshot del request no lo trae. La tool es la fuente de verdad."""
     market = data.get("market", "crypto")
-    provider = "yahoo" if market == "stock" else data.get("provider")
+    provider = (
+        get_stock_provider(data.get("symbol", ""))
+        if market == "stock"
+        else data.get("provider")
+    )
     available = (
-        provider in ("binance", "coinbase", "yahoo")
+        provider in ("binance", "coinbase", "alpaca", "yahoo")
+        and data.get("provider") == provider
         and data.get("precio") is not None
     )
     if available or _market_data_source is None or not data.get("symbol"):
@@ -43,8 +49,8 @@ def _resolve_feed_snapshot(data):
             data["symbol"],
             data.get("timeframe") or "15m",
             market,
-            provider=provider if provider in ("binance", "coinbase", "yahoo") else (
-                "yahoo" if market == "stock" else "coinbase"
+            provider=provider if provider in ("binance", "coinbase", "alpaca", "yahoo") else (
+                get_stock_provider(data["symbol"]) if market == "stock" else "coinbase"
             ),
         )
     except Exception as error:
@@ -60,8 +66,14 @@ def _resolve_feed_snapshot(data):
     # del snapshot original no se pisa con el payload del exchange.
     data = {**fetched, **{k: v for k, v in data.items() if v is not None}}
     market = data.get("market", "crypto")
-    provider = "yahoo" if market == "stock" else data.get("provider")
-    return data, provider, provider in ("binance", "coinbase", "yahoo")
+    provider = (
+        get_stock_provider(data.get("symbol", ""))
+        if market == "stock"
+        else data.get("provider")
+    )
+    if provider:
+        data["provider"] = provider
+    return data, provider, provider in ("binance", "coinbase", "alpaca", "yahoo")
 
 
 def run_tool_call(

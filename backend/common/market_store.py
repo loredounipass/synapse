@@ -119,8 +119,8 @@ def tape_key(provider, symbol):
 
 def normalize_provider_symbol(provider, symbol):
     """Normaliza la identidad del feed: crypto siempre mayuscula (ETHUSDT)."""
-    market = 'stock' if provider == 'yahoo' else 'crypto'
-    normalized = 'yahoo' if market == 'stock' else (provider or 'coinbase')
+    market = 'stock' if provider in ('yahoo', 'alpaca') else 'crypto'
+    normalized = provider if market == 'stock' else (provider or 'coinbase')
     return normalized, (symbol or '').upper(), market
 
 
@@ -153,7 +153,9 @@ def write_payload(provider, symbol, interval, payload, include_history=False):
         # 6h (cierre de vela lento) perderia sus velas al vencer HISTORY_TTL y el
         # frontend se quedaria con el grafo vacio aunque el feed siga vivo.
         pipe.expire(history_key(provider, symbol, interval), HISTORY_TTL)
-    market = payload.get('market') or ('stock' if provider == 'yahoo' else 'crypto')
+    market = payload.get('market') or (
+        'stock' if provider in ('yahoo', 'alpaca') else 'crypto'
+    )
     # Coincide con la sala que arma el frontend: `${market}:${provider}:${symbol}:${interval}`.
     room = f'{market}:{provider}:{symbol}:{interval}'
     pipe.publish(CHANNEL_UPDATES, json.dumps({

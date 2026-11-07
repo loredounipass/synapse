@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { connectTradingRoom } from "@/services/realtime/tradingSocketClient"
+import { getStockDataProvider } from "@/services/api/tradingApi"
 
 /**
  * Custom hook (capa de lógica) que expone los datos de trading en tiempo real.
@@ -9,8 +10,8 @@ import { connectTradingRoom } from "@/services/realtime/tradingSocketClient"
  * @param {string} symbol   - Par de trading (p.ej. 'BTC').
  * @param {string} interval - Timeframe (p.ej. '15m').
  * @param {string} market   - Tipo de mercado ('crypto' | 'stock').
- * @param {string} provider - Proveedor crypto ('coinbase' | 'binance'); 'yahoo'
- *   se asume solo para acciones. Si llega vacio la conexion no se abre: esperar
+ * @param {string} provider - Proveedor crypto ('coinbase' | 'binance'); las
+ *   acciones usan Alpaca, salvo índices/forex/futuros que usan Yahoo. Si llega vacio la conexion no se abre: esperar
  *   a que el proveedor este resuelto evita un join/leave inutil (en modo Redis
  *   cada join registra un lease y el feeder empieza a calcular esa sala).
  * @returns {{ liveData: Object|null, isConnected: boolean, error: string|null }}
@@ -26,7 +27,7 @@ export default function useTradingSocket(
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const resolvedProvider = market === "stock" ? "yahoo" : provider
+    const resolvedProvider = market === "stock" ? getStockDataProvider(symbol) : provider
     if (!symbol || !interval || !resolvedProvider) return
     setLiveData(null)
     setIsConnected(false)

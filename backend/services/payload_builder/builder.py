@@ -45,7 +45,6 @@ def build_payload(symbol, interval_str, market, klines, vol_24h=None,
     quote_volumes = parsed['quote_volumes']
     base_volumes = parsed['base_volumes']
 
-    provider = 'yahoo' if market == 'stock' else provider
     precio = closes[-1] if closes else fetch_last_price(symbol, market, provider)
 
     history = {}

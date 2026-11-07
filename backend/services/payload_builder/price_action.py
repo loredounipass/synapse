@@ -45,7 +45,7 @@ def compute_price_action(klines, symbol, market, opens, highs, lows,
         except Exception as e:
             logger.warning(f"[TradingData] order flow fallo para {symbol}: {e}")
     elif klines and closes:
-        # Stocks/indices: Yahoo no expone tape; proxy direccional por vela
+        # Stocks/indices: el feed equity no expone tape consolidado; proxy por vela
         try:
             order_flow = compute_order_flow_proxy(
                 opens, highs, lows, closes, quote_volumes, timestamps

@@ -8,6 +8,7 @@ import logging
 from flask import Blueprint, jsonify, request, g
 from common.cache import rate_limited
 from common import market_store
+from common.cache import get_stock_provider
 from common.redis_client import is_feeder_role
 from database import chat_store, market_preferences
 from auth.guards import public
@@ -81,7 +82,11 @@ def get_feed_health():
     symbol = (request.args.get('symbol') or '').upper()
     interval = request.args.get('interval', '15m')
     market = request.args.get('market', 'crypto')
-    provider = 'yahoo' if market == 'stock' else request.args.get('provider', 'coinbase')
+    provider = (
+        get_stock_provider(symbol.upper())
+        if market == 'stock'
+        else request.args.get('provider', 'coinbase')
+    )
     if symbol:
         health['requested'] = {
             'feed': f'{market}:{provider}:{symbol}:{interval}',
@@ -105,7 +110,7 @@ def get_trading_data(symbol):
     if market not in ('crypto', 'stock'):
         market = 'crypto'
     if market == 'stock':
-        provider = 'yahoo'
+        provider = get_stock_provider(symbol.upper())
     elif provider not in ('binance', 'coinbase'):
         return jsonify({'error': 'Proveedor no soportado'}), 400
     try:

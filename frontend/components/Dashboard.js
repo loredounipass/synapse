@@ -9,6 +9,7 @@ import { getRecommendation } from "@/utils/dataUtils"
 import {
   fetchTradingData,
   fetchTradingProviderPreference,
+  getStockDataProvider,
   saveTradingProviderPreference,
 } from "@/services/api/tradingApi"
 import { useState, useEffect, useRef } from "react"
@@ -36,7 +37,7 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
     moneda.symbol,
     timeframe,
     market,
-    // Las acciones siempre son 'yahoo': ahi no hay nada que esperar.
+    // Stocks individuales usan Alpaca; solo los símbolos no-equity usan Yahoo.
     market === "stock" || providerReady ? provider : null,
   )
 
@@ -81,7 +82,7 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
   ) => {
     const currentFetch = ++fetchCounterRef.current
     try {
-      const selectedMarketProvider = market === "stock" ? "yahoo" : selectedProvider
+      const selectedMarketProvider = market === "stock" ? undefined : selectedProvider
       const nuevoDatos = await fetchTradingData(
         moneda.symbol,
         selectedTimeframe,
@@ -147,7 +148,9 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
     if (
       providerReady
       && liveData
-      && liveData.provider === (market === "stock" ? "yahoo" : provider)
+      && liveData.provider === (market === "stock"
+        ? getStockDataProvider(moneda.symbol)
+        : provider)
     ) {
       fetchCounterRef.current++
       setDatos(liveData)

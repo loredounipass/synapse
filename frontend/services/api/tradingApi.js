@@ -6,6 +6,12 @@
 import { httpRequest } from "./httpClient"
 import { ENDPOINTS } from "./endpoints"
 
+const YAHOO_ONLY_STOCK_SYMBOLS = new Set(["^NDX", "GC=F", "EURUSD=X"])
+
+export function getStockDataProvider(symbol) {
+  return YAHOO_ONLY_STOCK_SYMBOLS.has(symbol) ? "yahoo" : "alpaca"
+}
+
 export const fetchTradingData = async (
   symbol,
   interval = "15m",
@@ -13,8 +19,9 @@ export const fetchTradingData = async (
   provider = "coinbase",
 ) => {
   if (!symbol) throw new Error("symbol is required")
+  const resolvedProvider = market === "stock" ? getStockDataProvider(symbol) : provider
   return httpRequest(
-    ENDPOINTS.trading(symbol, interval, market, provider),
+    ENDPOINTS.trading(symbol, interval, market, resolvedProvider),
     { timeout: 30000, retries: 2 },
   )
 }

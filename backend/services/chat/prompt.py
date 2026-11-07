@@ -534,7 +534,7 @@ def get_trading_system_prompt(indicator_data=None, global_context=None, model_na
         data_block += f"| CORE METRIC | VALUE | CONTEXT |\n"
         data_block += f"| :--- | :--- | :--- |\n"
         selected_provider = indicator_data.get(
-            'provider', 'yahoo' if market == 'stock' else 'N/A'
+            'provider', 'alpaca' if market == 'stock' else 'N/A'
         )
         data_block += f"| Active Market Data Provider | {str(selected_provider).upper()} | User-selected source for every supplied live price, candle, indicator, order book, liquidity, and order-flow value in this request. Do not substitute or infer another exchange from conversation history. |\n"
         data_block += "| Mandatory provider verification | MCP tool `get_selected_market_data` | Call this tool before every market analysis. Its provider must match the Active Market Data Provider above; use its snapshot as the final source check. If unavailable or mismatched, disclose that and do not analyze using another exchange or invent values. |\n"

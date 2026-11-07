@@ -10,6 +10,7 @@ from uuid import UUID
 from flask import Blueprint, jsonify, request, Response, stream_with_context, g
 from services.chat import nvidia_chat, nvidia_chat_stream, NvidiaChatError, AVAILABLE_MODELS, classify_intent
 from common.cache import rate_limited
+from common.cache import get_stock_provider
 from database import chat_store
 from auth.guards import public
 
@@ -117,7 +118,7 @@ def chat_endpoint():
     if market not in ('crypto', 'stock'):
         market = 'crypto'
     if market == 'stock':
-        provider = 'yahoo'
+        provider = get_stock_provider(symbol.upper())
     elif provider not in ('binance', 'coinbase'):
         return jsonify({'error': 'Unsupported market data provider.'}), 400
     history = []

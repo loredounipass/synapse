@@ -149,11 +149,19 @@ def rate_limited(ip):
 # Whitelist de activos soportados: evita que simbolos invalidos lleguen a las
 # fuentes de datos (p.ej. USDTUSDT) y quemen rate limit
 CRYPTO_SYMBOLS = {"BTCUSDT", "ETHUSDT", "SOLUSDT", "PEPEUSDT", "BNBUSDT", "DOGEUSDT", "XRPUSDT", "SHIBUSDT"}
-# Stocks + indices/commodities servidos todos por Yahoo Finance (market='stock').
+# Acciones estadounidenses servidas por Alpaca IEX. Yahoo se mantiene
+# exclusivamente para los tres instrumentos que Alpaca no ofrece como equity.
+ALPACA_STOCK_SYMBOLS = {
+    "AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL",
+    "META", "NFLX", "AMD", "INTC", "LMT",
+}
 # ^NDX = Nasdaq-100, GC=F = futuro de oro COMEX, EURUSD=X = par forex.
-# Se enrutan igual que las acciones porque fetch_yahoo_chart usa el endpoint
-# generico de chart de Yahoo.
 STOCK_SYMBOLS = {"AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL", "META", "NFLX", "AMD", "INTC", "LMT", "^NDX", "GC=F", "EURUSD=X"}
+
+
+def get_stock_provider(symbol):
+    """Use Alpaca for supported US equities; keep Yahoo for legacy non-equities."""
+    return "alpaca" if symbol in ALPACA_STOCK_SYMBOLS else "yahoo"
 
 
 # Cuanto espera la API al feeder cuando la clave aun no esta sembrada en Redis.
@@ -207,7 +215,7 @@ def get_trading_cached(symbol, interval_str='15m', market='crypto', force=False,
     el feeder; el cache en memoria y fetch_fn siguen vigentes en modo memory.
     """
     if market == 'stock':
-        provider = 'yahoo'
+        provider = get_stock_provider(symbol)
     elif provider not in ('binance', 'coinbase'):
         raise ValueError(f"Proveedor no soportado: {provider}")
 
@@ -221,9 +229,7 @@ def get_trading_cached(symbol, interval_str='15m', market='crypto', force=False,
         return _read_from_store(symbol, interval_str, market, provider, force=force)
 
     cache_key = (
-        f"{market}:{symbol}_{interval_str}"
-        if market == 'stock'
-        else f"{market}:{provider}:{symbol}_{interval_str}"
+        f"{market}:{provider}:{symbol}_{interval_str}"
     )
     now = time.time()
     entry = cache.get(cache_key)

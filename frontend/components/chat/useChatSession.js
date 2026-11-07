@@ -13,6 +13,7 @@ import {
   updateChatPreferences,
   updateChatWelcomeMessage,
 } from "@/services/api/chatApi"
+import { getStockDataProvider } from "@/services/api/tradingApi"
 
 export const INTERVAL_LABELS = {
   "1m": "1 minuto",
@@ -507,7 +508,7 @@ export function useChatSession({
   // de Coinbase se relanza como texto suelto y, tras cambiar a Binance, el modelo
   // lo presenta como si fuera el feed activo (mezcla de exchanges en la sesion).
   const activeFeed = {
-    provider: market === "stock" ? "yahoo" : provider,
+    provider: market === "stock" ? getStockDataProvider(symbol) : provider,
     symbol,
     timeframe: interval,
   }

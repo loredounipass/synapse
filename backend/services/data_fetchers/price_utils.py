@@ -1,7 +1,7 @@
 """Utilidades de precio y orquestador de klines + volumen 24h.
 
-Reune el conversor de timeframe, el quote en vivo de Yahoo, el ultimo precio
-como fallback y la funcion que obtiene velas + volumen sin calcular
+Reune el conversor de timeframe, las fuentes live de equities/crypto, el ultimo
+precio como fallback y la funcion que obtiene velas + volumen sin calcular
 indicadores (eso lo hace build_payload).
 """
 
@@ -13,6 +13,10 @@ from services.data_fetchers.coinbase_client import (
     coinbase_product_id, COINBASE_BASE, COINBASE_HEADERS,
 )
 from services.data_fetchers.yahoo import fetch_yahoo_chart
+from services.data_fetchers.alpaca import (
+    fetch_alpaca_chart,
+    fetch_alpaca_latest_trade,
+)
 from services.data_fetchers.coinbase_klines import fetch_coinbase_klines
 from services.data_fetchers.binance import fetch_klines, fetch_quote_volume_24h
 
@@ -27,8 +31,8 @@ def interval_seconds(interval_str):
     return value * mult
 
 
-# DEVUELVE EL PRECIO EN VIVO de Yahoo (meta.regularMarketPrice), equivalente al
-# ticker de Coinbase en crypto: es el quote mas fresco que expone Yahoo sin WS.
+# DEVUELVE EL PRECIO EN VIVO de Yahoo (meta.regularMarketPrice) para simbolos
+# fuera de las acciones estadounidenses soportadas por Alpaca.
 # Usa el chart 1d de un solo dia para que la respuesta sea minima.
 def fetch_yahoo_meta_price(symbol):
     url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + symbol
@@ -44,8 +48,17 @@ def fetch_yahoo_meta_price(symbol):
 # OBTIENE EL ULTIMO PRECIO DISPONIBLE COMO FALLBACK SI FALLAN LAS KLINES
 def fetch_last_price(symbol, market, provider='coinbase'):
     if market == 'stock':
-        # Primero el quote en vivo (regularMarketPrice); si falla, el cierre
-        # de la ultima vela diaria.
+        if provider == 'alpaca':
+            try:
+                return fetch_alpaca_latest_trade(symbol)
+            except Exception as e:
+                logger.warning(f"[TradingData] Alpaca latest trade fallo para {symbol}: {e}")
+            bars = fetch_alpaca_chart(symbol, '1d')
+            if bars:
+                return float(bars[-1][4])
+            raise ValueError(f'Alpaca IEX sin datos para {symbol}')
+        # Yahoo queda como fallback solo para índices, forex y futuros que
+        # Alpaca no ofrece como acciones individuales.
         try:
             live = fetch_yahoo_meta_price(symbol)
             if live and live > 0:
@@ -77,8 +90,14 @@ def fetch_last_price(symbol, market, provider='coinbase'):
 # de streaming de Binance re-seedee sus velas sin duplicar logica.
 def fetch_klines_and_volume(symbol, interval_str, market, provider='coinbase'):
     if market == 'stock':
-        provider = 'yahoo'
-        klines = fetch_yahoo_chart(symbol, interval_str)
+        if provider == 'alpaca':
+            klines = fetch_alpaca_chart(symbol, interval_str)
+        elif provider == 'yahoo':
+            # Fallback para índices, forex y futuros fuera de la cobertura
+            # de acciones estadounidenses de Alpaca.
+            klines = fetch_yahoo_chart(symbol, interval_str)
+        else:
+            raise ValueError(f"Proveedor no soportado para acciones: {provider}")
     elif provider == 'coinbase':
         klines = fetch_coinbase_klines(symbol, interval_str)
     elif provider == 'binance':
@@ -106,7 +125,7 @@ def fetch_klines_and_volume(symbol, interval_str, market, provider='coinbase'):
     vol_24h = None
     secs = interval_seconds(interval_str)
     # Si el ticker falla, se calcula el volumen con las velas del mismo
-    # proveedor. Stocks suman las velas de Yahoo de las ultimas 24h.
+    # proveedor. Stocks suman las velas de las ultimas 24h.
     try:
         if market == 'crypto' and klines:
             try:

@@ -217,7 +217,7 @@ class YahooStreamThread:
             logger.warning(f"[YahooStream] build_payload fallo para {room}: {e}")
             return
 
-        self.hooks['store_payload'](f'stock:{symbol}_{interval}', payload)
+        self.hooks['store_payload'](f'stock:yahoo:{symbol}_{interval}', payload)
 
         sig = json.dumps(payload, sort_keys=True, default=str)
         if self.last_emitted.get(room) == sig:
