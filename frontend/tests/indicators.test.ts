@@ -13,6 +13,7 @@ import {
   getRecommendation,
   getRecommendationColor,
   formatDisplaySymbol,
+  formatPairSymbol,
 } from "@/utils/dataUtils"
 
 describe("Technical Indicator Formatters & Utilities", () => {
@@ -187,6 +188,14 @@ describe("Technical Indicator Formatters & Utilities", () => {
       expect(formatDisplaySymbol("BTCUSDT")).toBe("BTCUSDT")
       expect(formatDisplaySymbol("")).toBe("")
       expect(formatDisplaySymbol(null)).toBe("")
+    })
+
+    it("formats the current-price badge as a trading pair without showing the provider", () => {
+      expect(formatPairSymbol("ETHUSDT")).toBe("ETH/USDT")
+      expect(formatPairSymbol("BTCUSDC")).toBe("BTC/USDC")
+      expect(formatPairSymbol("EURUSD=X")).toBe("EUR/USD")
+      expect(formatPairSymbol("AAPL")).toBe("AAPL")
+      expect(formatPairSymbol("GC=F")).toBe("GC")
     })
   })
 })

@@ -29,3 +29,9 @@ export const formatDisplaySymbol = (symbol) => {
   }
   return clean
 }
+
+export const formatPairSymbol = (symbol) => {
+  const displaySymbol = formatDisplaySymbol(symbol)
+  if (displaySymbol.includes("/")) return displaySymbol
+  return displaySymbol.replace(/(USDT|USDC|BTC|ETH|EUR|USD)$/i, "/$1")
+}

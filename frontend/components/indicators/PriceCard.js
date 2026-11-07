@@ -2,6 +2,7 @@
 
 import React from "react"
 import { ResponsiveContainer, AreaChart, Area, YAxis } from "recharts"
+import { formatPairSymbol } from "@/utils/dataUtils"
 
 export default function PriceCard({
   precio,
@@ -10,7 +11,6 @@ export default function PriceCard({
   history = {},
   volumen = null,
   time = "",
-  provider = "",
 }) {
   const parsePrecio = (p) => {
     const n = Number(p)
@@ -26,6 +26,7 @@ export default function PriceCard({
 
   const value = parsePrecio(precio)
   const formattedPrice = formatWithDots(value, decimales)
+  const pairLabel = formatPairSymbol(symbol)
 
   // HIGH/LOW y % de variacion REALES de las ultimas 24h, derivados de las velas
   // cuyo timestamp cae dentro de la ventana de 24h respecto a la ultima vela.
@@ -93,23 +94,15 @@ export default function PriceCard({
 
   return (
     <div className="synapse-card p-5 relative overflow-hidden flex flex-col justify-between min-h-[200px] group transition-all duration-300">
-      {/* Top row: CURRENT PRICE + LIVE MARKET PRICE badge | HIGH 24H */}
+      {/* Top row: current price and pair | high 24h */}
       <div className="flex items-center justify-between text-[11px] font-mono tracking-wider mb-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-slate-400 font-bold uppercase tracking-widest text-[11px]">
             CURRENT PRICE
           </span>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00f5c4]/10 border border-[#00f5c4]/30 text-[#00f5c4]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00f5c4] animate-ping" />
-            <span className="text-[9px] font-bold tracking-widest uppercase">LIVE MARKET PRICE</span>
-          </div>
-          {/* Unica fuente del feed: todo el terminal (velas, indicadores, libro y
-              tape) sale del proveedor seleccionado, nunca de dos mezclados. */}
-          {provider && (
-            <span className="px-2 py-0.5 rounded-full bg-slate-500/10 border border-slate-500/30 text-slate-300 text-[9px] font-bold tracking-widest uppercase whitespace-nowrap">
-              Fuente: {provider}
-            </span>
-          )}
+          <span className="px-2 py-0.5 rounded-full bg-[#00f5c4]/10 border border-[#00f5c4]/30 text-[#00f5c4] text-[9px] font-bold tracking-widest uppercase whitespace-nowrap">
+            {pairLabel}
+          </span>
           {time && (
             <span className="text-[10px] text-slate-400 font-semibold tabular-nums whitespace-nowrap">
               UTC {time}

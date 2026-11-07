@@ -1,14 +1,20 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { ArrowLeftRight, Newspaper, Activity, Diamond, LayoutDashboard, ChevronLeft, ChevronRight, LogIn, UserPlus, LogOut, User } from "lucide-react"
+import { useEffect, useRef } from "react"
+import { ArrowLeftRight, Newspaper, Activity, LayoutDashboard, ChevronLeft, ChevronRight, LogIn, UserPlus, LogOut, User } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import InstallButton from "./InstallButton"
-import { formatDisplaySymbol } from "@/utils/dataUtils"
 import { useAuth } from "@/hooks/useAuth"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function Header({
-  moneda,
   onCambiarMoneda,
   timeframe = "15m",
   onTimeframeChange,
@@ -23,22 +29,6 @@ export default function Header({
   const isNewsPage = pathname === "/news"
   const { user, isAuthenticated, openLoginDialog, openRegisterDialog, logout } = useAuth()
 
-  const [activeAsset, setActiveAsset] = useState(moneda)
-
-  useEffect(() => {
-    if (moneda) {
-      setActiveAsset(moneda)
-    } else {
-      try {
-        const raw = window.localStorage.getItem("woody-terminal-asset")
-        if (raw) {
-          const parsed = JSON.parse(raw)
-          if (parsed && parsed.symbol) setActiveAsset(parsed)
-        }
-      } catch (e) {}
-    }
-  }, [moneda])
-
   const handleCambiarMoneda = () => {
     if (onCambiarMoneda) {
       onCambiarMoneda()
@@ -52,24 +42,13 @@ export default function Header({
 
   const timeframes = ["1m", "5m", "15m", "1h", "4h", "6h", "1d"]
 
-  // Selector de temporalidades: iguala las dimensiones de Change Pair; las
-  // opciones se desplazan horizontalmente cuando no caben.
+  // Selector de temporalidades: las opciones se desplazan horizontalmente
+  // cuando no caben, sin comprimir los controles de navegación.
   const tfScrollRef = useRef(null)
-  const changePairRef = useRef(null)
-  const [tfSize, setTfSize] = useState(null)
   const scrollTf = (dir) => {
     const el = tfScrollRef.current
     if (el) el.scrollBy({ left: dir * 64, behavior: "smooth" })
   }
-
-  useEffect(() => {
-    const el = changePairRef.current
-    if (!el) return
-    const measure = () => setTfSize({ width: el.offsetWidth, height: el.offsetHeight })
-    measure()
-    window.addEventListener("resize", measure)
-    return () => window.removeEventListener("resize", measure)
-  }, [])
 
   useEffect(() => {
     const el = tfScrollRef.current
@@ -93,16 +72,6 @@ export default function Header({
     if (active) active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" })
   }, [timeframe])
 
-  // Par formateado con slash: ETHUSDT -> ETH/USDT. Stocks/forex/indices de Yahoo
-  // pasan por formatDisplaySymbol para quitar el sufijo =X/=F (EURUSD=X -> EUR/USD).
-  const rawSymbol = activeAsset?.symbol || "ETHUSDT"
-  const pairLabel =
-    activeAsset?.market === "stock"
-      ? formatDisplaySymbol(rawSymbol)
-      : rawSymbol.includes("/")
-        ? rawSymbol
-        : rawSymbol.replace(/(USDT|USDC|BTC|ETH|EUR|USD)$/, "/$1")
-
   return (
     <header className="w-full bg-[#070c14]/95 border-b border-[#142335] sticky top-0 z-50 backdrop-blur-md px-3 sm:px-6 py-2.5 mb-5 shadow-lg shadow-black/40">
       <div className="max-w-[1600px] mx-auto flex flex-wrap items-center gap-x-3 gap-y-2.5 text-xs font-mono">
@@ -110,7 +79,7 @@ export default function Header({
             controls and status; on mobile it sits above them. */}
           <div
             onClick={() => router.push("/dashboard")}
-            className="order-1 flex items-center gap-2.5 cursor-pointer group min-w-0"
+            className="order-1 flex flex-shrink-0 items-center gap-2.5 cursor-pointer group min-w-0"
           >
             <div className="w-8 h-8 rounded-lg bg-[#00f5c4]/10 border border-[#00f5c4]/40 flex items-center justify-center text-[#00f5c4] shadow-[0_0_12px_rgba(0,245,196,0.3)] group-hover:scale-105 transition-transform flex-shrink-0">
               <Activity className="w-4.5 h-4.5 animate-pulse" />
@@ -122,24 +91,14 @@ export default function Header({
   
         {/* Asset badge + navigation actions + timeframe selector. Centered in the
             navbar on large screens; its own full-width row on mobile. */}
-        <div className="order-3 w-full flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3 md:overflow-x-auto md:[&::-webkit-scrollbar]:hidden md:[-ms-overflow-style:none] md:[scrollbar-width:none] lg:order-2 lg:w-auto lg:flex-1 lg:justify-center">
-          {/* Coin / Pair badge con ETH/USDT y SPOT claramente separados */}
-          <button
-            onClick={handleCambiarMoneda}
-            title="Click para cambiar activo"
-            className="group flex flex-shrink-0 items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#09111b] border border-[#16283d] hover:border-[#00f5c4]/40 transition-all shadow-sm"
-          >
-            <div className="w-5 h-5 rounded-md bg-[#00f5c4]/10 border border-[#00f5c4]/30 flex items-center justify-center shadow-[0_0_8px_rgba(0,245,196,0.2)]">
-              <Diamond className="w-3 h-3 text-[#00f5c4] fill-[#00f5c4]/40" />
-            </div>
-            <span className="font-bold text-white tracking-wider text-xs">{pairLabel}</span>
-            <span className="px-2 py-0.5 rounded-full bg-[#00f5c4]/15 border border-[#00f5c4]/30 text-[#00f5c4] font-bold text-[9px] tracking-widest uppercase shadow-[0_0_8px_rgba(0,245,196,0.15)]">
-              {activeAsset?.market === "stock" ? (activeAsset?.badge || "STOCK") : "SPOT"}
-            </span>
-          </button>
-  
+        <div
+          className={`${isNewsPage
+            ? "order-1 ml-4 w-auto basis-auto flex-1 flex-nowrap justify-center"
+            : "order-3 w-full basis-full flex-wrap justify-center"
+          } flex items-center gap-1 sm:gap-3 md:flex-nowrap md:overflow-x-auto md:[&::-webkit-scrollbar]:hidden md:[-ms-overflow-style:none] md:[scrollbar-width:none] lg:order-2 lg:ml-8 lg:w-auto lg:basis-auto lg:flex-1 lg:justify-center`}
+        >
           {/* Navigation actions: icon-only on mobile, icon + label from sm up */}
-          <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-2 lg:gap-4">
             {/* Install app button (solo aparece si el navegador ofrece instalar la PWA) */}
             <InstallButton />
   
@@ -147,7 +106,7 @@ export default function Header({
             {isNewsPage && (
               <button
                 onClick={() => router.push("/dashboard")}
-                className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#09111b] border border-[#16283d] hover:border-[#00f5c4]/40 hover:bg-[#00f5c4]/5 text-white transition-all text-sm font-semibold tracking-wide shadow-sm"
+                className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-slate-400 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-none sm:px-2 sm:py-2 sm:text-sm"
                 title="Return to Trading Dashboard"
               >
                 <LayoutDashboard className="w-4 h-4 text-[#00f5c4]" />
@@ -158,10 +117,11 @@ export default function Header({
             {/* Market News button */}
             <button
               onClick={() => router.push("/news")}
-              className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all text-sm font-semibold tracking-wide shadow-sm ${
+              aria-current={isNewsPage ? "page" : undefined}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-full p-0 transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-none sm:px-2 sm:py-2 sm:text-sm ${
                 isNewsPage
-                  ? "bg-cyan-400/15 border border-cyan-400 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.25)]"
-                  : "bg-[#09111b] border border-[#16283d] hover:border-cyan-400/40 hover:bg-cyan-400/5 text-white"
+                  ? "bg-cyan-300/10 text-cyan-300 sm:bg-transparent sm:after:absolute sm:after:inset-x-2 sm:after:-bottom-0.5 sm:after:h-px sm:after:bg-cyan-300"
+                  : "text-slate-300 hover:bg-white/5 hover:text-cyan-300 sm:hover:bg-transparent"
               }`}
               title="Market News"
             >
@@ -171,23 +131,22 @@ export default function Header({
   
             {/* Change pair button */}
             <button
-              ref={changePairRef}
               onClick={handleCambiarMoneda}
-              className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#09111b] border border-[#16283d] hover:border-[#00f5c4]/40 hover:bg-[#00f5c4]/5 text-white transition-all text-sm font-semibold tracking-wide shadow-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-none sm:px-2 sm:py-2 sm:text-sm"
               title="Change Trading Pair"
             >
               <ArrowLeftRight className="w-4 h-4 text-[#00f5c4]" />
               <span className="hidden sm:inline font-semibold whitespace-nowrap">Change Pair</span>
             </button>
             {market === "crypto" && onProviderChange && (
-              <label className="flex items-center gap-2 rounded-full bg-[#09111b] border border-[#16283d] px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-slate-400">
+              <label className="flex items-center gap-2 px-1 py-2 text-[10px] sm:text-xs font-semibold text-slate-500">
                 <span className="hidden sm:inline">Provider</span>
                 <select
                   aria-label="Market data provider"
                   value={provider}
                   onChange={onProviderChange}
                   disabled={!providerReady}
-                  className="bg-transparent text-[#00f5c4] outline-none disabled:opacity-50"
+                  className="cursor-pointer bg-transparent text-[#00f5c4] outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-[#00f5c4]/70 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option className="bg-[#0c1420]" value="coinbase">Coinbase</option>
                   <option className="bg-[#0c1420]" value="binance">Binance</option>
@@ -201,24 +160,23 @@ export default function Header({
             </span>
           )}
   
-          {/* Timeframe selector: un poco mas ancho que Change Pair y con la misma altura. */}
+          {/* Selector compacto: las demás temporalidades se alcanzan deslizando horizontalmente. */}
           {onTimeframeChange && (
             <div
-              style={tfSize ? { width: tfSize.width + 24, height: tfSize.height } : undefined}
-              className="flex flex-shrink-0 min-w-0 items-center gap-1"
+              className="flex w-auto min-w-[7rem] flex-1 items-center gap-0.5 sm:min-w-0 sm:gap-1 lg:w-[min(100%,12rem)] lg:flex-none"
             >
               <button
                 type="button"
                 onClick={() => scrollTf(-1)}
                 aria-label="Temporalidades anteriores"
-                className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-[#09111b] border border-[#16283d] text-slate-400 hover:text-white hover:border-[#00f5c4]/40 transition-colors"
+                className="flex h-7 w-7 flex-none items-center justify-center text-slate-500 transition-colors hover:text-[#00f5c4] focus-visible:outline-none focus-visible:text-[#00f5c4]"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
+                <ChevronLeft className="h-4 w-4 flex-none" />
               </button>
 
               <div
                 ref={tfScrollRef}
-                className="flex h-full min-w-0 flex-1 items-center gap-0.5 px-1 rounded-full bg-[#09111b] border border-[#16283d] overflow-x-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                className="flex h-8 min-w-0 flex-1 touch-pan-x items-center gap-0.5 overflow-x-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:h-9 sm:gap-1"
               >
                 {timeframes.map((tf) => {
                   const isActive = timeframe.toLowerCase() === tf.toLowerCase()
@@ -226,10 +184,11 @@ export default function Header({
                     <button
                       key={tf}
                       data-active={isActive ? "true" : "false"}
+                      aria-pressed={isActive}
                       onClick={() => onTimeframeChange(tf)}
-                      className={`flex h-full flex-shrink-0 items-center whitespace-nowrap px-2.5 rounded-full text-xs font-semibold tracking-wide transition-all uppercase text-center ${isActive
-                        ? "bg-[#00f5c4]/15 border border-[#00f5c4] text-[#00f5c4] shadow-[0_0_12px_rgba(0,245,196,0.35)]"
-                        : "text-slate-300 hover:text-white border border-transparent"
+                      className={`relative flex h-full flex-shrink-0 items-center whitespace-nowrap px-1 text-[10px] font-semibold tracking-wide transition-colors uppercase text-center focus-visible:outline-none focus-visible:text-[#00f5c4] sm:px-1.5 sm:text-xs ${isActive
+                        ? "text-[#00f5c4] after:absolute after:inset-x-1.5 after:bottom-1 after:h-px after:bg-[#00f5c4]"
+                        : "text-slate-400 hover:text-white"
                         }`}
                     >
                       {tf}
@@ -242,22 +201,22 @@ export default function Header({
                 type="button"
                 onClick={() => scrollTf(1)}
                 aria-label="Temporalidades siguientes"
-                className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-[#09111b] border border-[#16283d] text-slate-400 hover:text-white hover:border-[#00f5c4]/40 transition-colors"
+                className="flex h-7 w-7 flex-none items-center justify-center text-slate-500 transition-colors hover:text-[#00f5c4] focus-visible:outline-none focus-visible:text-[#00f5c4]"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="h-4 w-4 flex-none" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Right side: Auth Controls */}
-        <div className="order-2 lg:order-3 ml-auto flex items-center gap-2 flex-shrink-0">
+        {/* Account controls remain anchored to the right edge of the navbar. */}
+        <div className="order-2 ml-auto flex flex-shrink-0 items-center justify-end gap-2 lg:order-3">
           {!isAuthenticated ? (
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => openLoginDialog()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#09111b] border border-[#16283d] hover:border-[#00f5c4]/40 hover:bg-[#00f5c4]/5 text-white transition-all text-xs font-semibold tracking-wider uppercase shadow-sm"
+                className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-1.5 sm:rounded-none sm:px-2 sm:py-2 sm:text-xs"
               >
                 <LogIn className="w-3.5 h-3.5 text-[#00f5c4]" />
                 <span className="hidden sm:inline">LOGIN</span>
@@ -265,31 +224,41 @@ export default function Header({
               <button
                 type="button"
                 onClick={() => openRegisterDialog()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#00f5c4] hover:bg-[#33f7d0] text-[#070c14] transition-all text-xs font-bold tracking-wider uppercase shadow-[0_0_12px_rgba(0,245,196,0.3)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-[#00f5c4] transition-colors hover:bg-white/5 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-1.5 sm:rounded-none sm:px-2 sm:py-2 sm:text-xs"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">REGISTRO</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#09111b] border border-[#00f5c4]/30 text-white shadow-[0_0_8px_rgba(0,245,196,0.1)]">
-                <div className="w-4 h-4 rounded-full bg-[#00f5c4]/20 border border-[#00f5c4]/50 flex items-center justify-center text-[#00f5c4]">
-                  <User className="w-2.5 h-2.5" />
-                </div>
-                <span className="font-bold text-xs text-slate-100 max-w-[100px] sm:max-w-[140px] truncate">
-                  {user?.username || user?.email?.split("@")[0] || "Trader"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => logout()}
-                title="Cerrar Sesión"
-                className="p-1.5 rounded-full bg-[#09111b] border border-[#16283d] hover:border-[#ff3b69]/50 hover:bg-[#ff3b69]/10 text-slate-400 hover:text-[#ff3b69] transition-all"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Abrir menú de usuario"
+                  title="Cuenta"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[#00f5c4] transition-colors hover:bg-[#00f5c4]/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/70"
+                >
+                  <User className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="min-w-48 border-[#1b2b3d] bg-[#0b121d] text-slate-100"
               >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
+                <DropdownMenuLabel className="font-mono text-xs text-slate-400">
+                  {user?.username || user?.email?.split("@")[0] || "Trader"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#1b2b3d]" />
+                <DropdownMenuItem
+                  onSelect={() => logout()}
+                  className="cursor-pointer font-mono text-xs text-slate-300 focus:bg-[#ff3b69]/10 focus:text-[#ff3b69]"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Cerrar sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

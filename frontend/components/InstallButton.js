@@ -47,7 +47,7 @@ export default function InstallButton() {
     <button
       onClick={handleClick}
       title="Instalar app"
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#09111b] border border-[#16283d] hover:border-[#00f5c4]/40 hover:bg-[#00f5c4]/5 text-white transition-all text-sm font-semibold tracking-wide shadow-sm"
+      className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-white transition-all hover:bg-white/5 active:scale-95 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-[#16283d] sm:bg-[#09111b] sm:px-4 sm:py-2 sm:text-sm sm:shadow-sm sm:hover:border-[#00f5c4]/40 sm:hover:bg-[#00f5c4]/5"
     >
       <Download className="w-4 h-4 text-[#00f5c4]" />
       <span className="hidden sm:inline font-semibold whitespace-nowrap">Instalar</span>

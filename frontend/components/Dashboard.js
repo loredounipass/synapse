@@ -279,7 +279,6 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
               history={datos.history}
               volumen={datos.volumen}
               time={time}
-              provider={datos.provider}
             />
           </div>
           <RecommendationCard
