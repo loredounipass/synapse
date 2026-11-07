@@ -50,6 +50,16 @@ cd ../backend
 pip install -r requirements.txt
 ```
 
+## 📦 Clonar una ruta específica
+
+Si solo necesitas una parte del proyecto, puedes usar `degit` para descargar una ruta específica sin clonar todo el repositorio. Por ejemplo, para obtener únicamente el frontend:
+
+```bash
+npx degit github:loredounipass/synapse/frontend synapse-frontend
+```
+
+Este comando descarga el contenido de `frontend/` en la carpeta local `synapse-frontend`.
+
 ## 🚀 Usage
 
 1. Start the backend server:
