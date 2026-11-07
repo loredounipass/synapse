@@ -129,8 +129,47 @@ describe("HTTP Client Auth Interceptor & Auto-Refresh", () => {
     expect(tokenManager.isAuthenticated()).toBe(false)
     expect(tokenManager.getAccessToken()).toBeNull()
     expect(authRequiredSpy).toHaveBeenCalledTimes(1)
+    expect(authRequiredSpy.mock.calls[0][0].detail.message).toBe(
+      "Token has been revoked.",
+    )
+
+    window.removeEventListener(tokenManager.AUTH_REQUIRED_EVENT, authRequiredSpy)
+  })
+
+  it("forwards the backend refresh-token error to the auth-required event", async () => {
+    tokenManager.setSession({
+      access_token: "expired-token",
+      refresh_token: "revoked-refresh-token",
+      expires_in: 900,
+      user: { id: "1" },
+    })
+    const authRequiredSpy = vi.fn()
+    window.addEventListener(tokenManager.AUTH_REQUIRED_EVENT, authRequiredSpy)
+
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({ error: "Token has expired." }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: "Refresh token has been revoked." }),
+      })
+
+    await expect(
+      httpRequest("/trading/BTCUSDT", { retries: 0 }),
+    ).rejects.toThrow("Refresh token has been revoked.")
+
+    expect(authRequiredSpy).toHaveBeenCalled()
+    expect(
+      authRequiredSpy.mock.calls.some(
+        ([event]) => event.detail.message === "Refresh token has been revoked.",
+      ),
+    ).toBe(true)
+    expect(tokenManager.isAuthenticated()).toBe(false)
 
     window.removeEventListener(tokenManager.AUTH_REQUIRED_EVENT, authRequiredSpy)
   })
 })
-

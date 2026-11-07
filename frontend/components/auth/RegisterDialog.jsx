@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { useAuth } from "@/hooks/useAuth"
 import { showSuccessToast, showErrorToast } from "@/components/global-toast"
+import { getApiErrorMessage } from "@/services/api/errorMessages"
 import { PasswordStrengthIndicator, validatePasswordRules } from "./PasswordStrengthIndicator"
 import { Activity, Eye, EyeOff, Lock, Mail, User, Loader2 } from "lucide-react"
 
@@ -53,8 +54,9 @@ export function RegisterDialog() {
       setEmail("")
       setPassword("")
     } catch (err) {
-      // Mostrar exactamente el error del backend (ej: "Email already registered.", "Username already taken.")
-      showErrorToast(err.message || "Error al registrar la cuenta")
+      showErrorToast(
+        getApiErrorMessage(err, "No se pudo conectar con el servidor de registro."),
+      )
     } finally {
       setLoading(false)
     }
@@ -173,4 +175,3 @@ export function RegisterDialog() {
     </Dialog>
   )
 }
-

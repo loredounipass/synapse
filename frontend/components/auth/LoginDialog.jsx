@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { useAuth } from "@/hooks/useAuth"
 import { showSuccessToast, showErrorToast } from "@/components/global-toast"
+import { getApiErrorMessage } from "@/services/api/errorMessages"
 import { Activity, Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react"
 
 export function LoginDialog() {
@@ -37,8 +38,9 @@ export function LoginDialog() {
       setEmail("")
       setPassword("")
     } catch (err) {
-      // Mostrar exactamente el mensaje devuelto por el backend
-      showErrorToast(err.message || "Error al iniciar sesión")
+      showErrorToast(
+        getApiErrorMessage(err, "No se pudo conectar con el servidor de autenticación."),
+      )
     } finally {
       setLoading(false)
     }
@@ -146,4 +148,3 @@ export function LoginDialog() {
     </Dialog>
   )
 }
-

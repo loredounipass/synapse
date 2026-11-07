@@ -12,6 +12,7 @@ import {
   getStockDataProvider,
   saveTradingProviderPreference,
 } from "@/services/api/tradingApi"
+import { getApiErrorMessage } from "@/services/api/errorMessages"
 import { useState, useEffect, useRef } from "react"
 import useTradingSocket from "@/hooks/useTradingSocket"
 
@@ -96,14 +97,10 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
     } catch (err) {
       if (currentFetch === fetchCounterRef.current) {
         console.error("Error:", err)
-        // 503 = el feeder no publico la sala en Redis; 400 = simbolo/proveedor no
-        // soportado. Son los dos casos donde el mensaje del backend dice al
-        // usuario que hacer; para red o timeout se mantiene el texto generico.
-        setError(
-          (err.status === 503 || err.status === 400) && err.message
-            ? err.message
-            : "Error al obtener datos de trading",
-        )
+        setError(getApiErrorMessage(
+          err,
+          "No se pudo conectar con el servidor de trading. Verifica tu conexión e inténtalo de nuevo.",
+        ))
       }
     } finally {
       if (currentFetch === fetchCounterRef.current) {
