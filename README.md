@@ -64,6 +64,14 @@ cd frontend
 pnpm run dev
 ```
 
+## 📦 Clonar una ruta específica
+
+Si solo necesitas una parte del proyecto, puedes usar `degit` para descargar una ruta específica sin clonar todo el repositorio. Por ejemplo, para obtener únicamente el frontend:
+
+```bash
+npx degit github:loredounipass/synapse/frontend synapse-frontend
+```
+
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
