@@ -24,7 +24,7 @@ const IndicatorGrid = ({ datos = {} }) => {
   return (
     <div className="space-y-4">
       {/* 1. Main Middle Card: Candlestick Chart */}
-      <div className="synapse-card p-4">
+      <div id="candle-chart-section" className="synapse-card p-4 scroll-mt-20">
         <CandleChart
           key={`${datos.symbol}-${datos.timeframe}`}
           data={candleData}

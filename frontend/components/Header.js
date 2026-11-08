@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { ArrowLeftRight, Newspaper, Activity, LayoutDashboard, ChevronLeft, ChevronRight, LogIn, UserPlus, LogOut, User } from "lucide-react"
+import { ArrowLeftRight, Newspaper, Activity, LayoutDashboard, ChevronLeft, ChevronRight, LogIn, UserPlus, LogOut, User, PanelLeft } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import InstallButton from "./InstallButton"
 import { useAuth } from "@/hooks/useAuth"
@@ -15,14 +15,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export default function Header({
-  onCambiarMoneda,
+  onCambiarMoneda = () => {},
   timeframe = "15m",
-  onTimeframeChange,
-  market,
+  onTimeframeChange = () => {},
+  market = "crypto",
   provider = "coinbase",
   providerReady = false,
-  onProviderChange,
+  onProviderChange = () => {},
   providerPreferenceError = null,
+  onToggleSidebar = () => {},
+  isSidebarCollapsed = false,
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -35,7 +37,7 @@ export default function Header({
     } else {
       try {
         window.localStorage.removeItem("woody-terminal-asset")
-      } catch (e) {}
+      } catch (e) { }
       router.push("/")
     }
   }
@@ -73,82 +75,87 @@ export default function Header({
   }, [timeframe])
 
   return (
-    <header className="w-full bg-[#070c14]/95 border-b border-[#142335] sticky top-0 z-50 backdrop-blur-md px-3 sm:px-6 py-2.5 mb-5 shadow-lg shadow-black/40">
-      <div className={`mx-auto grid max-w-[1600px] items-center gap-x-2 gap-y-2.5 text-xs font-mono sm:gap-x-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] ${
-        isNewsPage
-          ? "grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_auto]"
-          : "grid-cols-[minmax(0,1fr)_auto]"
-      }`}>
-        {/* Brand (left). On large screens it shares a single row with the
-            controls and status; on mobile it sits above them. */}
-          <div
-            onClick={() => router.push("/dashboard")}
-            className="col-start-1 row-start-1 flex min-w-0 flex-shrink-0 cursor-pointer items-center gap-2.5 group lg:col-start-1 lg:row-start-1"
-          >
-            <div className="w-8 h-8 rounded-lg bg-[#00f5c4]/10 border border-[#00f5c4]/40 flex items-center justify-center text-[#00f5c4] shadow-[0_0_12px_rgba(0,245,196,0.3)] group-hover:scale-105 transition-transform flex-shrink-0">
-              <Activity className="w-4.5 h-4.5 animate-pulse" />
+    <header className="w-full bg-[#070c14]/95 border-b border-[#142335] sticky top-0 z-40 backdrop-blur-md px-3 sm:px-6 py-2.5 mb-5 shadow-lg shadow-black/40">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 text-xs font-mono sm:gap-3">
+        {/* Left: Sidebar Toggle on Dashboard or Brand fallback */}
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {onToggleSidebar ? (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              title={isSidebarCollapsed ? "Expandir menú lateral (Ctrl+B)" : "Colapsar menú lateral (Ctrl+B)"}
+              aria-label="Alternar menú lateral"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#16283d] bg-[#0c1420]/80 text-slate-400 hover:border-[#00f5c4]/40 hover:text-[#00f5c4] hover:bg-[#00f5c4]/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 active:scale-95 flex-shrink-0"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+          ) : (
+            <div
+              onClick={() => router.push("/dashboard")}
+              className="flex min-w-0 flex-shrink-0 cursor-pointer items-center gap-2 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#00f5c4]/10 border border-[#00f5c4]/40 flex items-center justify-center text-[#00f5c4] shadow-[0_0_12px_rgba(0,245,196,0.3)] group-hover:scale-105 transition-transform flex-shrink-0">
+                <Activity className="w-4.5 h-4.5 animate-pulse" />
+              </div>
+              <span className="font-extrabold tracking-wider text-white text-base sm:text-lg whitespace-nowrap group-hover:text-[#00f5c4] transition-colors">
+                SYNAPSE
+              </span>
             </div>
-            <span className="font-extrabold tracking-wider text-white text-base sm:text-lg whitespace-nowrap group-hover:text-[#00f5c4] transition-colors">
-              SYNAPSE
-            </span>
-          </div>
-  
-        {/* Asset badge + navigation actions + timeframe selector. Centered in the
-            navbar on large screens; its own full-width row on mobile. */}
-        <div className={`${isNewsPage
-          ? "col-start-2 row-start-1 w-auto justify-end sm:col-start-1 sm:row-start-2 sm:w-full sm:justify-center"
-          : "col-start-1 row-start-2 w-full justify-start"
-        } flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 lg:col-start-2 lg:row-start-1 lg:ml-8 lg:w-auto lg:flex-1 lg:justify-center`}>
+          )}
+        </div>
+
+        {/* Center: Navigation actions + timeframe selector. Centered in navbar, scrollable horizontal on narrow screens */}
+        <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start sm:justify-center gap-1 sm:gap-3 overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Navigation actions: icon-only on mobile, icon + label from sm up */}
           <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4">
             {/* Install app button (solo aparece si el navegador ofrece instalar la PWA) */}
             <InstallButton />
-  
+
             {/* Dashboard button (shown when on news page) */}
             {isNewsPage && (
               <button
                 onClick={() => router.push("/dashboard")}
-                className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-slate-400 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-none sm:px-2 sm:py-2 sm:text-sm"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 text-slate-400 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm"
                 title="Return to Trading Dashboard"
               >
                 <LayoutDashboard className="w-4 h-4 text-[#00f5c4]" />
                 <span className="hidden sm:inline font-semibold whitespace-nowrap">Dashboard</span>
               </button>
             )}
-  
+
             {/* Market News button */}
             <button
               onClick={() => router.push("/news")}
               aria-current={isNewsPage ? "page" : undefined}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-full p-0 transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-none sm:px-2 sm:py-2 sm:text-sm ${
-                isNewsPage
+              className={`relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm ${isNewsPage
                   ? "bg-cyan-300/10 text-cyan-300 sm:bg-transparent sm:after:absolute sm:after:inset-x-2 sm:after:-bottom-0.5 sm:after:h-px sm:after:bg-cyan-300"
                   : "text-slate-300 hover:bg-white/5 hover:text-cyan-300 sm:hover:bg-transparent"
-              }`}
+                }`}
               title="Market News"
             >
               <Newspaper className="w-4 h-4 text-cyan-400" />
               <span className="hidden sm:inline font-semibold whitespace-nowrap">MarketNews</span>
             </button>
-  
+
             {/* Change pair button */}
             <button
               onClick={handleCambiarMoneda}
-              className="flex h-9 w-9 items-center justify-center rounded-full p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-none sm:px-2 sm:py-2 sm:text-sm"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm"
               title="Change Trading Pair"
             >
               <ArrowLeftRight className="w-4 h-4 text-[#00f5c4]" />
               <span className="hidden sm:inline font-semibold whitespace-nowrap">Change Pair</span>
             </button>
+
             {market === "crypto" && onProviderChange && (
-              <label className="flex items-center gap-2 px-1 py-2 text-[10px] sm:text-xs font-semibold text-slate-500">
+              <label className="flex items-center gap-1.5 px-1 py-1 text-[10px] sm:text-xs font-semibold text-slate-500">
                 <span className="hidden sm:inline">Provider</span>
                 <select
                   aria-label="Market data provider"
                   value={provider}
                   onChange={onProviderChange}
                   disabled={!providerReady}
-                  className="cursor-pointer bg-transparent text-[#00f5c4] outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-[#00f5c4]/70 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="cursor-pointer bg-transparent text-[#00f5c4] outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-[#00f5c4]/70 disabled:cursor-not-allowed disabled:opacity-50 text-[11px]"
                 >
                   <option className="bg-[#0c1420]" value="coinbase">Coinbase</option>
                   <option className="bg-[#0c1420]" value="binance">Binance</option>
@@ -156,17 +163,16 @@ export default function Header({
               </label>
             )}
           </div>
+
           {market === "crypto" && providerPreferenceError && (
-            <span role="alert" className="basis-full text-[10px] text-[#ff3b69]">
+            <span role="alert" className="text-[10px] text-[#ff3b69] whitespace-nowrap">
               {providerPreferenceError}
             </span>
           )}
-  
+
           {/* Selector compacto: las demás temporalidades se alcanzan deslizando horizontalmente. */}
           {onTimeframeChange && (
-            <div
-              className="flex w-[min(100%,8rem)] flex-none items-center gap-0 sm:w-[min(100%,9rem)] sm:gap-1 lg:w-[min(100%,12rem)]"
-            >
+            <div className="flex w-[min(100%,8rem)] flex-none items-center gap-0 sm:w-[min(100%,9rem)] sm:gap-1 lg:w-[min(100%,12rem)]">
               <button
                 type="button"
                 onClick={() => scrollTf(-1)}
@@ -211,11 +217,8 @@ export default function Header({
           )}
         </div>
 
-        {/* Account controls remain anchored to the right edge of the navbar. */}
-        <div className={`${isNewsPage
-          ? "col-start-3 row-start-1 sm:col-start-2 sm:row-start-2"
-          : "col-start-2 row-start-2"
-        } flex flex-shrink-0 items-center justify-end gap-2 lg:col-start-3 lg:row-start-1`}>
+        {/* Right: Account controls remain anchored to the right edge of the navbar. */}
+        <div className="flex flex-shrink-0 items-center justify-end gap-2">
           {!isAuthenticated ? (
             <div className="flex items-center gap-2">
               <button

@@ -1,6 +1,7 @@
 "use client"
 
 import Header from "@/components/Header"
+import DashboardSidebar from "@/components/DashboardSidebar"
 import PriceCard from "@/components/indicators/PriceCard"
 import RecommendationCard from "@/components/indicators/RecommendationCard"
 import IndicatorGrid from "@/components/indicators/IndicatorGrid"
@@ -27,6 +28,40 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
   const [time, setTime] = useState("")
   const [mounted, setMounted] = useState(false)
   const [woodyScanning, setWoodyScanning] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarOpenMobile, setSidebarOpenMobile] = useState(false)
+
+  // Restaurar y guardar preferencia de colapso de la barra lateral
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("synapse_sidebar_collapsed")
+      if (saved !== null) {
+        setSidebarCollapsed(saved === "true")
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("synapse_sidebar_collapsed", String(sidebarCollapsed))
+    } catch {
+      // ignore
+    }
+  }, [sidebarCollapsed])
+
+  // Atajo de teclado: Ctrl+B o Cmd+B para alternar barra lateral
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault()
+        setSidebarCollapsed((prev) => !prev)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   const fetchCounterRef = useRef(0)
   const providerSaveCounterRef = useRef(0)
@@ -220,8 +255,17 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
 
   const recomendacion = getRecommendation(datos)
 
+  const handleToggleSidebar = () => {
+    // En mobile (< lg) abre el drawer; en desktop alterna colapso
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setSidebarOpenMobile((prev) => !prev)
+    } else {
+      setSidebarCollapsed((prev) => !prev)
+    }
+  }
+
   return (
-    <div className="min-h-screen relative overflow-x-clip font-mono bg-[#070c14] text-slate-100 selection:bg-[#00f5c4]/20 selection:text-[#00f5c4]">
+    <div className="min-h-screen relative overflow-x-clip font-mono bg-[#070c14] text-slate-100 selection:bg-[#00f5c4]/20 selection:text-[#00f5c4] flex">
       {/* Precision Grid Background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.025]"
@@ -242,59 +286,80 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
         }}
       />
 
-      {/* Unified Synapse Top Navigation Header */}
-      <Header
+      {/* Dashboard Sidebar */}
+      <DashboardSidebar
         moneda={moneda}
-        onCambiarMoneda={onCambiarMoneda}
-        timeframe={timeframe}
-        onTimeframeChange={handleTimeframeChange}
         market={market}
+        timeframe={timeframe}
         provider={provider}
-        providerReady={providerReady}
-        onProviderChange={handleProviderChange}
-        providerPreferenceError={providerPreferenceError}
+        onCambiarMoneda={onCambiarMoneda}
+        isOpenMobile={sidebarOpenMobile}
+        setIsOpenMobile={setSidebarOpenMobile}
+        isCollapsed={sidebarCollapsed}
+        setIsCollapsed={setSidebarCollapsed}
+        datos={datos}
       />
 
-      {/* Main Dashboard Layout */}
-      <main
-        className={`max-w-[1600px] mx-auto px-3 sm:px-6 pb-8 relative z-10 transition-all duration-700 ${
-          mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        }`}
-      >
-        {/* Synthetic data warning banner */}
-        {datos.synthetic && (
-          <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center gap-2 font-mono text-xs text-amber-400">
-            <span className="text-base">⚠️</span>
-            <span className="font-bold tracking-wider uppercase">DATOS SINTÉTICOS</span>
-            <span className="text-amber-400/70">— Las APIs de mercado no respondieron. Los indicadores mostrados son aproximaciones, no datos reales.</span>
-          </div>
-        )}
-        {/* Top Row: Current Price Card & Market Signal Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <PriceCard
-              precio={datos.precio}
-              decimales={datos.decimales}
-              symbol={moneda.symbol}
-              history={datos.history}
-              volumen={datos.volumen}
-              time={time}
+      {/* Contenido principal: se desplaza suavemente al expandir/colapsar el sidebar */}
+      <div className="flex-1 min-w-0 flex flex-col transition-[margin,padding,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+        {/* Unified Synapse Top Navigation Header */}
+        <Header
+          moneda={moneda}
+          onCambiarMoneda={onCambiarMoneda}
+          timeframe={timeframe}
+          onTimeframeChange={handleTimeframeChange}
+          market={market}
+          provider={provider}
+          providerReady={providerReady}
+          onProviderChange={handleProviderChange}
+          providerPreferenceError={providerPreferenceError}
+          onToggleSidebar={handleToggleSidebar}
+          isSidebarCollapsed={sidebarCollapsed}
+        />
+
+        {/* Main Dashboard Layout */}
+        <main
+          className={`max-w-[1600px] mx-auto w-full px-3 sm:px-6 pb-8 relative z-10 transition-all duration-700 ${
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
+          {/* Synthetic data warning banner */}
+          {datos.synthetic && (
+            <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center gap-2 font-mono text-xs text-amber-400">
+              <span className="text-base">⚠️</span>
+              <span className="font-bold tracking-wider uppercase">DATOS SINTÉTICOS</span>
+              <span className="text-amber-400/70">— Las APIs de mercado no respondieron. Los indicadores mostrados son aproximaciones, no datos reales.</span>
+            </div>
+          )}
+          {/* Top Row: Current Price Card & Market Signal Card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <PriceCard
+                precio={datos.precio}
+                decimales={datos.decimales}
+                symbol={moneda.symbol}
+                history={datos.history}
+                volumen={datos.volumen}
+                time={time}
+              />
+            </div>
+            <RecommendationCard
+              recomendacion={recomendacion}
+              buySignals={datos.buySignals}
+              sellSignals={datos.sellSignals}
+              neutralSignals={datos.neutralSignals}
             />
           </div>
-          <RecommendationCard
-            recomendacion={recomendacion}
-            buySignals={datos.buySignals}
-            sellSignals={datos.sellSignals}
-            neutralSignals={datos.neutralSignals}
-          />
-        </div>
 
-        {/* Candlestick & Technical Indicators Grid */}
-        <IndicatorGrid
-          key={`${datos.symbol}-${datos.provider}-${datos.timeframe}`}
-          datos={datos}
-        />
-      </main>
+          {/* Candlestick & Technical Indicators Grid */}
+          <div id="indicators-section" className="scroll-mt-20">
+            <IndicatorGrid
+              key={`${datos.symbol}-${datos.provider}-${datos.timeframe}`}
+              datos={datos}
+            />
+          </div>
+        </main>
+      </div>
 
       {/* Woody scanning animation */}
       {woodyScanning && (

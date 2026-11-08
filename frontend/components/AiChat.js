@@ -45,6 +45,10 @@ export default function AiChat({
       // localStorage no disponible
     }
     setChatHydrated(true)
+
+    const handleOpenChat = () => setIsOpen(true)
+    window.addEventListener("open-woody-chat", handleOpenChat)
+    return () => window.removeEventListener("open-woody-chat", handleOpenChat)
   }, [])
 
   useEffect(() => {
