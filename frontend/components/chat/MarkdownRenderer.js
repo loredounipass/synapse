@@ -76,7 +76,7 @@ export function renderMarkdown(text, currentSymbol, currentInterval) {
       elements.push(
         <ul
           key={`ul-${elements.length}`}
-          className="my-2.5 ml-5 space-y-1.5 list-disc marker:text-[#00f5c4] text-slate-300 text-[15.5px] leading-[1.65] font-sans"
+          className="my-2.5 ml-5 space-y-1.5 list-disc marker:text-[#00f5c4] text-slate-300 text-[15px] sm:text-[16px] leading-[1.7] font-sans"
         >
           {listItems}
         </ul>
@@ -283,7 +283,7 @@ export function renderMarkdown(text, currentSymbol, currentInterval) {
     } else if (/^\d+\.\s/.test(trimmed)) {
       flushList()
       elements.push(
-        <div key={i} className="my-1.5 flex gap-2 text-[13.5px] font-sans">
+        <div key={i} className="my-1.5 flex gap-2 text-[15px] sm:text-[16px] leading-[1.7] font-sans">
           <span className="text-[#00f5c4] font-mono font-bold flex-shrink-0 mt-0.5">{trimmed.match(/^\d+\./)[0]}</span>
           <span className="text-slate-300">{formatInline(trimmed.replace(/^\d+\.\s/, ""), i)}</span>
         </div>
@@ -291,7 +291,7 @@ export function renderMarkdown(text, currentSymbol, currentInterval) {
     } else if (trimmed.startsWith("> ")) {
       flushList()
       elements.push(
-        <blockquote key={i} className="pl-3 border-l-2 border-[#00f5c4] my-2.5 text-slate-300 italic bg-[#00f5c4]/5 py-2 pr-3 rounded-r text-[15.5px] font-sans">
+        <blockquote key={i} className="pl-3 border-l-2 border-[#00f5c4] my-2.5 text-slate-300 italic bg-[#00f5c4]/5 py-2 pr-3 rounded-r text-[15px] sm:text-[16px] leading-[1.7] font-sans">
           {formatInline(trimmed.slice(2), i)}
         </blockquote>
       )
@@ -301,7 +301,7 @@ export function renderMarkdown(text, currentSymbol, currentInterval) {
     } else {
       flushList()
       elements.push(
-        <p key={i} className="text-slate-200 my-1.5 leading-[1.68] text-[15.5px] sm:text-[17px] font-sans">
+        <p key={i} className="text-slate-200 my-1.5 leading-[1.7] text-[15px] sm:text-[16px] font-sans">
           {formatInline(trimmed, i)}
         </p>
       )

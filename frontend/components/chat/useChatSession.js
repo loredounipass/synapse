@@ -59,6 +59,7 @@ export function useChatSession({
 
   const typingRef = useRef(null)
   const abortRef = useRef(null)
+  const streamRafRef = useRef(null)
   const activeModelRef = useRef(null)
   const inputRef = useRef(null)
   const chatContainerRef = useRef(null)
@@ -182,11 +183,11 @@ export function useChatSession({
     }
   }, [datos])
 
-  // Detección de scroll para pausar auto-scroll
+  // Detección de scroll para pausar auto-scroll si el usuario sube a leer
   const handleScroll = () => {
     const container = chatContainerRef.current
     if (!container) return
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80
     isAutoScrollPausedRef.current = !isNearBottom
   }
 
@@ -220,12 +221,11 @@ export function useChatSession({
     container.scrollTo({ top: container.scrollHeight, behavior })
   }
 
+  // Anclaje directo al scrollHeight sin relanzar animaciones repetidas que provoquen vibración
   useEffect(() => {
     const container = chatContainerRef.current
-    if (!container) return
-    if (!isAutoScrollPausedRef.current) {
-      container.scrollTo({ top: container.scrollHeight, behavior: "auto" })
-    }
+    if (!container || isAutoScrollPausedRef.current) return
+    container.scrollTop = container.scrollHeight
   }, [messages, typingText, streamingThought])
 
   useEffect(() => {
@@ -397,6 +397,10 @@ export function useChatSession({
   // (sendMessage agrega el mensaje final al estado actual al terminar) y no
   // siga consumiendo cuota. El catch de AbortError no agrega nada si no hubo stall.
   const cancelInFlight = () => {
+    if (streamRafRef.current != null) {
+      cancelAnimationFrame(streamRafRef.current)
+      streamRafRef.current = null
+    }
     abortRef.current?.abort()
     abortRef.current = null
     setLoading(false)
@@ -603,25 +607,61 @@ export function useChatSession({
       let accumulatedContent = ""
       let memoryMeta = []
 
-      // Throttle del pintado en vivo: los tokens llegan a decenas por segundo.
-      // Coalescemos el setState a UN paint por animation frame (requestAnimation
-      // Frame, ~60fps max, alineado al refresco real del navegador). El pintado ya
-      // es barato (StreamingMarkdown solo re-parsea el bloque activo), asi que un
-      // flush por frame da un goteo suave sin el 'de golpe' de un parseo costoso.
-      // El resultado final se fija exacto al cerrar el stream (la respuesta pasa a
-      // messages). El scroll lo gobierna un unico efecto (ver useEffect de autoscroll).
-      let streamEnded = false
-      let rafId = null
-      const doFlush = () => {
-        rafId = null
-        if (streamEnded) return
-        setStreamingThought(accumulatedThought)
-        setTypingText(accumulatedContent)
+      // Smooth Token Delivery Pacer:
+      // Dosifica la revelación del texto a velocidad natural de lectura (estilo Claude / ChatGPT).
+      // Evita explosiones de paquetes de red que se imprimen de golpe y previene temblores visuales.
+      let targetContent = ""
+      let displayedChars = 0
+      let streamFinished = false
+      let pacerActive = true
+      let resolvePacerDrained = null
+
+      const pacerCompletionPromise = new Promise((resolve) => {
+        resolvePacerDrained = resolve
+      })
+
+      const pacerTick = () => {
+        if (!pacerActive) {
+          resolvePacerDrained?.()
+          return
+        }
+
+        const backlog = targetContent.length - displayedChars
+
+        if (backlog > 0) {
+          // - Si el backlog es pequeño (< 20 chars): 1 a 2 caracteres por frame (~60-120 cps, súper fluido)
+          // - Si el backlog es mediano (20 a 60 chars): 2 a 3 caracteres por frame
+          // - Si el backlog es grande (> 100 chars): acelera gradualmente sin dar brincos bruscos
+          let step = 2
+          if (backlog < 20) {
+            step = 1
+          } else if (backlog < 60) {
+            step = 2
+          } else if (backlog < 120) {
+            step = Math.min(4, Math.ceil(backlog / 25))
+          } else {
+            step = Math.min(10, Math.ceil(backlog / 18))
+          }
+
+          if (streamFinished && backlog <= 25) {
+            step = backlog // drena con elegancia los últimos caracteres al cerrar el stream
+          }
+
+          displayedChars = Math.min(targetContent.length, displayedChars + step)
+          setTypingText(targetContent.slice(0, displayedChars))
+        }
+
+        if (streamFinished && displayedChars >= targetContent.length) {
+          pacerActive = false
+          resolvePacerDrained?.()
+          return
+        }
+
+        streamRafRef.current = requestAnimationFrame(pacerTick)
       }
-      const scheduleFlush = () => {
-        if (streamEnded || rafId != null) return
-        rafId = requestAnimationFrame(doFlush)
-      }
+
+      // Arranca el loop del pacer de streaming suave
+      streamRafRef.current = requestAnimationFrame(pacerTick)
 
       resetStall()
       while (true) {
@@ -647,12 +687,12 @@ export function useChatSession({
             }
             if (parsed.type === "thought" && parsed.chunk) {
               accumulatedThought += parsed.chunk
-              scheduleFlush()
+              setStreamingThought(accumulatedThought)
             } else if (parsed.type === "content" && parsed.chunk) {
               if (isThinking) setIsThinking(false)
               setIsTyping(true)
+              targetContent += parsed.chunk
               accumulatedContent += parsed.chunk
-              scheduleFlush()
             } else if (parsed.type === "tool") {
               memoryMeta.push(parsed)
             } else if (parsed.type === "session_renamed") {
@@ -672,12 +712,13 @@ export function useChatSession({
         }
       }
 
-      // Detenemos el batching y cancelamos cualquier flush pendiente antes de
-      // fijar el estado final (la respuesta ya se pasa a messages debajo).
-      streamEnded = true
-      if (rafId != null) {
-        cancelAnimationFrame(rafId)
-        rafId = null
+      // La red finalizó; notificamos al pacer para que drene con suavidad antes de sellar
+      streamFinished = true
+      await pacerCompletionPromise
+
+      if (streamRafRef.current != null) {
+        cancelAnimationFrame(streamRafRef.current)
+        streamRafRef.current = null
       }
 
       // Finalizar mensaje con el pensamiento y respuesta completas
@@ -726,6 +767,12 @@ export function useChatSession({
       setStreamingThought("")
       setIsThinking(false)
     } catch (err) {
+      pacerActive = false
+      if (streamRafRef.current != null) {
+        cancelAnimationFrame(streamRafRef.current)
+        streamRafRef.current = null
+      }
+      resolvePacerDrained?.()
       if (err?.name === "AbortError") {
         if (stalled) {
           const errorMessage = {
@@ -760,6 +807,10 @@ export function useChatSession({
   }
 
   const stopGeneration = () => {
+    if (streamRafRef.current != null) {
+      cancelAnimationFrame(streamRafRef.current)
+      streamRafRef.current = null
+    }
     abortRef.current?.abort()
     abortRef.current = null
     if (typingRef.current) {

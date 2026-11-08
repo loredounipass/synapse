@@ -355,7 +355,7 @@ export default function ChatMessageList({
               </details>
             )}
 
-            <div className="text-[15.5px] sm:text-[17px] font-sans leading-[1.68] text-slate-100 break-words tracking-[-0.01em]">
+            <div className="text-[15px] sm:text-[16px] font-sans leading-[1.7] text-slate-100 break-words tracking-[-0.01em]">
               <StreamingMarkdown text={msg.content} currentSymbol={symbol} currentInterval={intervalLabel} />
             </div>
 
@@ -369,20 +369,18 @@ export default function ChatMessageList({
         )
       }), [messages, symbol, interval, intervalLabel])}
 
-      {/* Efecto de Escritura en Vivo: pipeline en etapa INFORME + markdown EN
-          VIVO. StreamingMarkdown parsea por bloques y memoiza los sellados, así
-          que cada frame solo re-renderiza el bloque activo (bajo CPU, sin el O(n^2)
-          de re-parsing completo y sin 'temblor'). Usa el MISMO renderizador que el
-          mensaje final, por lo que no hay salto de formato al pasar de stream a
-          mensaje terminado. */}
+      {/* Efecto de Escritura en Vivo: tipografía 100% idéntica al mensaje final
+          para evitar cualquier salto de layout o temblor al completar la respuesta. */}
       {isTyping && typingText && (
         <div className="w-full my-2">
-          <AgentPanel statusLabel="REDACTANDO INFORME" statusPulse steps={pipelineSteps}>
-            <div className="text-[13.5px] sm:text-[14.5px] font-sans leading-[1.68] text-slate-100 break-words tracking-[-0.01em]">
-              <StreamingMarkdown text={typingText} currentSymbol={symbol} currentInterval={intervalLabel} />
-              <span className="inline-block w-1.5 h-4 ml-1 bg-emerald-400 animate-pulse align-middle" />
-            </div>
-          </AgentPanel>
+          <div className="flex items-center gap-2 mb-2 text-[10px] font-mono text-emerald-400 font-semibold tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>WOODY ESTRATEGA · REDACTANDO</span>
+          </div>
+          <div className="text-[15px] sm:text-[16px] font-sans leading-[1.7] text-slate-100 break-words tracking-[-0.01em]">
+            <StreamingMarkdown text={typingText} currentSymbol={symbol} currentInterval={intervalLabel} />
+            <span className="inline-block w-1.5 h-4 ml-1.5 bg-[#00f5c4] rounded-sm animate-pulse align-middle select-none pointer-events-none" />
+          </div>
         </div>
       )}
 
