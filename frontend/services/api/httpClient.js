@@ -17,6 +17,7 @@ import {
   getRefreshToken,
   updateTokens,
   clearSession,
+  isAccessTokenExpiringSoon,
   AUTH_REQUIRED_EVENT,
 } from "../auth/tokenManager"
 
@@ -129,7 +130,15 @@ export async function httpRequest(
     }
 
     if (!skipAuth) {
-      const token = getAccessToken()
+      let token = getAccessToken()
+      // Si el access token ya expiró localmente pero tenemos refresh token, refrescar antes de enviar
+      if (token && getRefreshToken() && isAccessTokenExpiringSoon(0)) {
+        try {
+          token = await performTokenRefresh()
+        } catch {
+          token = getAccessToken()
+        }
+      }
       if (token && !finalHeaders["Authorization"]) {
         finalHeaders["Authorization"] = `Bearer ${token}`
       }
@@ -222,14 +231,24 @@ export async function httpRequest(
 /**
  * `fetch` crudo que devuelve la Response tal cual (sin parsear ni reintentar).
  * Inyecta el Bearer token salvo que se indique `skipAuth: true`.
+ * Si el token está por expirar o ya expiró y hay refresh token, lo renueva
+ * preventivamente antes de abrir streams SSE o peticiones de audio.
  * Se usa para el stream SSE de /chat y para el blob de audio de /tts.
  */
-export function rawRequest(path, init = {}, { skipAuth = false } = {}) {
+export async function rawRequest(path, init = {}, { skipAuth = false } = {}) {
   const finalInit = { ...init }
   const finalHeaders = { ...(finalInit.headers || {}) }
 
   if (!skipAuth) {
-    const token = getAccessToken()
+    let token = getAccessToken()
+    // Renovar preventivamente si faltan menos de 30s para que no se corte el stream a mitad
+    if (token && getRefreshToken() && isAccessTokenExpiringSoon(30_000)) {
+      try {
+        token = await performTokenRefresh()
+      } catch {
+        token = getAccessToken()
+      }
+    }
     if (token && !finalHeaders["Authorization"]) {
       finalHeaders["Authorization"] = `Bearer ${token}`
     }
