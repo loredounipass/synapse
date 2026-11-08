@@ -38,6 +38,26 @@ def _is_price_at_entry(
     return False
 
 
+def _is_price_past_invalidation(
+    current_price: float,
+    entry_price: float,
+    stop_loss: float,
+    direction: str,
+) -> bool:
+    """Verifica si el precio ya cruzó la entrada en contra y se adentró en zona de pérdida."""
+    direction = (direction or "LONG").upper()
+    if direction == "LONG":
+        # En LONG: stop_loss < entry_price. Si el precio cae por debajo de la entrada más del 35% hacia SL
+        distance = entry_price - stop_loss
+        threshold = entry_price - (distance * 0.35)
+        return current_price <= threshold
+    else:
+        # En SHORT: stop_loss > entry_price. Si el precio sube por encima de la entrada más del 35% hacia SL
+        distance = stop_loss - entry_price
+        threshold = entry_price + (distance * 0.35)
+        return current_price >= threshold
+
+
 def evaluate_setup_lifecycle(
     setup: Dict[str, Any],
     market_payload: Optional[Dict[str, Any]] = None,
@@ -125,16 +145,20 @@ def evaluate_setup_lifecycle(
                         f"[SetupEngine] 🎉 SETUP ACTIVADO: {symbol} {direction} @ {current_price}"
                     )
                 else:
-                    # Precio en zona pero una o más condiciones NO se cumplen
-                    # Si el precio perforó la entrada en contra o falló la confirmación de vela:
-                    failed_reasons_str = "; ".join(cond_eval["failed_reasons"])
-                    new_status = "INVALIDATED"
-                    invalidation_reason = (
-                        f"Precio en entrada ({current_price}) pero fallaron condiciones: {failed_reasons_str}"
-                    )
-                    logger.info(
-                        f"[SetupEngine] ❌ SETUP INVALIDADO: {symbol} {direction} - {invalidation_reason}"
-                    )
+                    # Precio en zona de entrada pero las condiciones aún no se cumplen.
+                    # Se invalida si el precio quebró la entrada hacia la zona de pérdida (SL)
+                    if _is_price_past_invalidation(current_price, entry_price, stop_loss, direction):
+                        failed_reasons_str = "; ".join(cond_eval["failed_reasons"])
+                        new_status = "INVALIDATED"
+                        invalidation_reason = (
+                            f"Precio quebró la entrada hacia Stop Loss ({current_price}) sin confirmar condiciones: {failed_reasons_str}"
+                        )
+                        logger.info(
+                            f"[SetupEngine] ❌ SETUP INVALIDADO: {symbol} {direction} - {invalidation_reason}"
+                        )
+                    else:
+                        # Permanece en PENDING monitoreando hasta que se cumplan las confirmaciones
+                        invalidation_reason = None
 
     elif current_status == "ACTIVATED":
         # Monitoreo de cierre o invalidación post-activación

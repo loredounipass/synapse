@@ -93,6 +93,8 @@ describe("Setups Math & Utilities", () => {
     expect(indicatorKeys).toContain("volCandle")
     expect(indicatorKeys).toContain("candle_close")
     expect(indicatorKeys).toContain("buyer_percent")
+    expect(indicatorKeys).toContain("order_flow_delta")
+    expect(indicatorKeys).toContain("order_flow_delta_percent")
   })
 })
 

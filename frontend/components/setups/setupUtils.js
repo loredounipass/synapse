@@ -11,6 +11,8 @@ export const AVAILABLE_INDICATORS = [
   { value: "volCandle", label: "Volumen Vela Actual", type: "number", defaultOp: ">", defaultVal: 500 },
   { value: "candle_close", label: "Precio Cierre Vela", type: "number", defaultOp: ">", defaultVal: 0 },
   { value: "buyer_percent", label: "Dominancia Compradora (%)", type: "number", defaultOp: ">=", defaultVal: 55 },
+  { value: "order_flow_delta", label: "Order Flow Delta ($)", type: "number", defaultOp: "<", defaultVal: -20000 },
+  { value: "order_flow_delta_percent", label: "Order Flow Delta (%)", type: "number", defaultOp: "<", defaultVal: -15 },
   { value: "ema50", label: "EMA 50", type: "number", defaultOp: ">", defaultVal: 0 },
   { value: "ema200", label: "EMA 200", type: "number", defaultOp: ">", defaultVal: 0 },
   { value: "stoch_k", label: "Estocástico %K", type: "number", defaultOp: "<=", defaultVal: 20 },

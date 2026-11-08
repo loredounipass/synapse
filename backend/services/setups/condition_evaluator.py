@@ -123,6 +123,64 @@ def _extract_indicator_value(indicator_name: str, payload: Dict[str, Any]) -> An
     if key in ("bblower", "bb_lower"):
         return payload.get("bbLower")
 
+    # Métricas de Order Flow (Tape o Proxy)
+    order_flow = payload.get("orderFlow") or payload.get("order_flow")
+    if isinstance(order_flow, dict):
+        if key in ("order_flow_delta", "orderflow_delta", "order_flow", "orderflow", "delta", "net_delta", "orderflowdelta"):
+            return order_flow.get("delta")
+        if key in ("order_flow_deltapercent", "order_flow_delta_percent", "deltapercent", "delta_percent", "orderflowdeltapercent"):
+            return order_flow.get("deltaPercent")
+        if key in ("order_flow_buy_volume", "order_flow_buyvolume", "buy_volume", "buyvolume"):
+            return order_flow.get("buyVolume")
+        if key in ("order_flow_sell_volume", "order_flow_sellvolume", "sell_volume", "sellvolume"):
+            return order_flow.get("sellVolume")
+        if key in ("order_flow_buy_percent", "order_flow_buypercent", "buy_percent", "buypercent"):
+            return order_flow.get("buyPercent")
+        if key in ("order_flow_sell_percent", "order_flow_sellpercent", "sell_percent", "sellpercent"):
+            return order_flow.get("sellPercent")
+        if key in ("order_flow_trade_count", "order_flow_tradecount", "trade_count", "tradecount"):
+            return order_flow.get("tradeCount")
+
+    # Métricas del Libro de Órdenes (Order Book)
+    if key in ("best_bid", "bestbid"):
+        return payload.get("bestBid")
+    if key in ("best_ask", "bestask"):
+        return payload.get("bestAsk")
+    if key in ("bid_volume", "bidvolume", "bid_vol"):
+        return payload.get("bidVolume")
+    if key in ("ask_volume", "askvolume", "ask_vol"):
+        return payload.get("askVolume")
+    if key in ("order_book_band_percent", "orderbookbandpercent", "ob_band"):
+        return payload.get("orderBookBandPercent")
+    if key in ("book_age", "book_age_seconds", "bookageseconds"):
+        return payload.get("bookAgeSeconds")
+    if key in ("spread", "bid_ask_spread"):
+        best_bid = payload.get("bestBid")
+        best_ask = payload.get("bestAsk")
+        if best_bid is not None and best_ask is not None:
+            try:
+                return float(best_ask) - float(best_bid)
+            except (ValueError, TypeError):
+                pass
+
+    # Soporte para notación por punto (ej: order_flow.delta, orderFlow.delta, history.closes)
+    if "." in key:
+        parts = key.split(".")
+        curr_obj = payload
+        for part in parts:
+            if isinstance(curr_obj, dict):
+                match = None
+                for k, v in curr_obj.items():
+                    if k.lower() == part.lower():
+                        match = v
+                        break
+                curr_obj = match
+            else:
+                curr_obj = None
+                break
+        if curr_obj is not None:
+            return curr_obj
+
     # Fallback por coincidencia directa insensible a mayúsculas
     for payload_key, val in payload.items():
         if payload_key.lower() == key:

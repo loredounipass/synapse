@@ -37,6 +37,12 @@ class TestConditionEvaluator(unittest.TestCase):
             "volCandle": 750.0,
             "volumen": 1500000.0,
             "buyerPercent": 58.5,
+            "orderFlow": {
+                "delta": -79077.0,
+                "deltaPercent": -24.5,
+                "buyVolume": 120000.0,
+                "sellVolume": 199077.0,
+            },
             "ema50": 103000.0,
             "ema200": 101000.0,
             "history": {
@@ -73,6 +79,12 @@ class TestConditionEvaluator(unittest.TestCase):
         res = evaluate_single_condition(cond, self.mock_payload)
         self.assertTrue(res["passed"])
         self.assertEqual(res["actual_value"], 750.0)
+
+    def test_order_flow_delta_condition(self):
+        cond = {"indicator": "order_flow_delta", "operator": "<", "value": -20000.0}
+        res = evaluate_single_condition(cond, self.mock_payload)
+        self.assertTrue(res["passed"])
+        self.assertEqual(res["actual_value"], -79077.0)
 
     def test_all_conditions_pass(self):
         conditions = [
@@ -231,14 +243,45 @@ class TestSetupEngine(unittest.TestCase):
         }
 
         payload = {
-            "precio": 104200.0,  # En zona de entrada
+            "precio": 103500.0,  # Perforó la entrada hacia Stop Loss (>35% de distancia a SL)
             "rsi": 45.0,        # No cumple (45 > 30)
         }
 
         res = evaluate_setup_lifecycle(setup, market_payload=payload)
         self.assertTrue(res["state_changed"])
         self.assertEqual(res["setup"]["status"], "INVALIDATED")
-        self.assertIn("fallaron condiciones", res["setup"]["invalidation_reason"])
+        self.assertIn("Precio quebró la entrada", res["setup"]["invalidation_reason"])
+
+    @patch("database.setups_store.update_setup_status")
+    def test_pending_remains_pending_when_conditions_not_yet_met_at_entry(self, mock_update):
+        mock_update.side_effect = lambda setup_id, status, invalidation_reason, evaluation_details: {
+            "id": setup_id,
+            "status": status,
+            "invalidation_reason": invalidation_reason,
+            "evaluation_details": evaluation_details,
+        }
+
+        setup = {
+            "id": str(uuid4()),
+            "symbol": "BTCUSDT",
+            "direction": "LONG",
+            "entry_price": 104250.0,
+            "stop_loss": 103000.0,
+            "take_profit": 107000.0,
+            "status": "PENDING",
+            "conditions": [
+                {"indicator": "rsi", "operator": "<=", "value": 30.0, "label": "RSI <= 30"}
+            ],
+        }
+
+        payload = {
+            "precio": 104200.0,  # En zona de entrada
+            "rsi": 45.0,        # Aún no cumple, pero tampoco ha roto hacia SL
+        }
+
+        res = evaluate_setup_lifecycle(setup, market_payload=payload)
+        self.assertFalse(res["state_changed"])
+        self.assertEqual(res["setup"]["status"], "PENDING")
 
 
 class TestSetupMCPTools(unittest.TestCase):
