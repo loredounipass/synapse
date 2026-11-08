@@ -16,9 +16,9 @@ export function NewsMarketToggle({ market, onSelectMarket }: NewsMarketTogglePro
   ]
 
   return (
-    <div className="flex items-center justify-center mb-6">
+    <div className="flex items-center justify-center mb-6 w-full">
       <div
-        className="flex items-center gap-1 p-1 rounded-xl"
+        className="flex items-center gap-1 p-1 rounded-xl max-w-full"
         style={{
           background: "rgba(17, 17, 17, 0.4)",
           border: "1px solid rgba(255,255,255,0.03)",

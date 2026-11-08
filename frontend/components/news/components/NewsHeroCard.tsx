@@ -45,7 +45,7 @@ export function NewsHeroCard({
           e.currentTarget.style.boxShadow = "0 4px 40px rgba(0,0,0,0.3)"
         }}
       >
-        <div className="relative overflow-hidden" style={{ height: "420px", background: "#080a0e" }}>
+        <div className="relative overflow-hidden h-[320px] sm:h-[420px] bg-[#080a0e]">
           {hasImg ? (
             <img
               src={article.imageurl}
@@ -79,11 +79,11 @@ export function NewsHeroCard({
           />
 
           {/* Content overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 lg:p-10">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 lg:p-10">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2.5 sm:mb-4">
               {coinMeta && (
                 <span
-                  className="text-[11px] font-mono font-bold px-3 py-1.5 rounded-lg tracking-wider"
+                  className="text-[10px] sm:text-[11px] font-mono font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg tracking-wider"
                   style={{
                     background: `${coinMeta.color}18`,
                     color: coinMeta.color,
@@ -95,32 +95,32 @@ export function NewsHeroCard({
                   {coinMeta.name.toUpperCase()}
                 </span>
               )}
-              <span className="text-[11px] font-mono text-gray-400 flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+              <span className="text-[10px] sm:text-[11px] font-mono text-gray-400 flex items-center gap-1.5 bg-white/5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg backdrop-blur-sm">
                 <Globe className="w-3 h-3" />
                 {article.source}
               </span>
-              <span className="text-[11px] font-mono text-gray-500 flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+              <span className="text-[10px] sm:text-[11px] font-mono text-gray-500 flex items-center gap-1.5 bg-white/5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg backdrop-blur-sm">
                 <Clock className="w-3 h-3" />
                 {formatTime(article.published)}
               </span>
             </div>
 
             <h2
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white group-hover:text-emerald-200 transition-colors duration-500 leading-tight line-clamp-3 max-w-4xl"
+              className="text-lg sm:text-2xl lg:text-3xl font-bold text-white group-hover:text-emerald-200 transition-colors duration-500 leading-snug sm:leading-tight line-clamp-3 max-w-4xl"
               style={{ textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}
             >
               {article.title}
             </h2>
 
             {article.body && (
-              <p className="text-sm sm:text-base text-gray-400 mt-3 line-clamp-2 max-w-3xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-gray-400 mt-2 sm:mt-3 line-clamp-2 max-w-3xl leading-relaxed">
                 {article.body}
               </p>
             )}
 
-            <div className="flex items-center gap-2 mt-5 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">
-              <span className="text-xs font-mono font-medium tracking-wider">READ FULL ARTICLE</span>
-              <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <div className="flex items-center gap-1.5 sm:gap-2 mt-3 sm:mt-5 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">
+              <span className="text-[11px] sm:text-xs font-mono font-medium tracking-wider">READ FULL ARTICLE</span>
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
           </div>
 

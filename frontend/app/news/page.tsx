@@ -101,7 +101,7 @@ export default function NewsPage() {
 
   return (
     <PrivateRoute>
-      <div className="min-h-screen flex" style={{ background: "#05070a" }}>
+      <div className="min-h-screen relative overflow-x-clip flex font-mono bg-[#05070a] text-slate-100">
         {/* Dashboard Sidebar */}
         <DashboardSidebar
           moneda={moneda}
@@ -113,7 +113,7 @@ export default function NewsPage() {
         />
 
         {/* Contenido principal */}
-        <div className="flex-1 min-w-0 flex flex-col transition-[margin,padding,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+        <div className="flex-1 min-w-0 flex flex-col w-full overflow-x-clip transition-[margin,padding,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
           <Header
             onToggleSidebar={handleToggleSidebar}
             isSidebarCollapsed={sidebarCollapsed}
@@ -144,7 +144,7 @@ export default function NewsPage() {
             style={{ borderBottom: "1px solid #10b981", borderRight: "1px solid #10b981" }}
           />
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8">
+          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-2 pb-8 w-full min-w-0">
             {/* Encabezado del Market News */}
             <NewsPageHeader market={market} storiesCount={filteredNews.length} />
 

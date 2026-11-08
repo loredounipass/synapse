@@ -14,16 +14,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+/**
+ * @param {Object} props
+ * @param {(() => void) | null} [props.onCambiarMoneda]
+ * @param {string} [props.timeframe]
+ * @param {((tf: string) => void) | null} [props.onTimeframeChange]
+ * @param {"crypto" | "stock"} [props.market]
+ * @param {string} [props.provider]
+ * @param {boolean} [props.providerReady]
+ * @param {((e: any) => void) | null} [props.onProviderChange]
+ * @param {string | null} [props.providerPreferenceError]
+ * @param {(() => void) | null} [props.onToggleSidebar]
+ * @param {boolean} [props.isSidebarCollapsed]
+ */
 export default function Header({
-  onCambiarMoneda = () => {},
+  onCambiarMoneda = null,
   timeframe = "15m",
-  onTimeframeChange = () => {},
+  onTimeframeChange = null,
   market = "crypto",
   provider = "coinbase",
   providerReady = false,
-  onProviderChange = () => {},
+  onProviderChange = null,
   providerPreferenceError = null,
-  onToggleSidebar = () => {},
+  onToggleSidebar = null,
   isSidebarCollapsed = false,
 }) {
   const router = useRouter()
@@ -76,7 +89,7 @@ export default function Header({
 
   return (
     <header className="w-full bg-[#070c14]/95 border-b border-[#142335] sticky top-0 z-40 backdrop-blur-md px-3 sm:px-6 py-2.5 mb-5 shadow-lg shadow-black/40">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 text-xs font-mono sm:gap-3">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 text-xs font-mono sm:gap-3 w-full min-w-0">
         {/* Left: Sidebar Toggle on Dashboard or Brand fallback */}
         <div className="flex flex-shrink-0 items-center gap-2">
           {onToggleSidebar ? (
@@ -104,11 +117,10 @@ export default function Header({
           )}
         </div>
 
-        {/* Center: Navigation actions + timeframe selector. Centered in navbar, scrollable horizontal on narrow screens */}
+        {/* Center: Navigation actions + timeframe selector */}
         <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start sm:justify-center gap-1 sm:gap-3 overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {/* Navigation actions: icon-only on mobile, icon + label from sm up */}
           <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4">
-            {/* Install app button (solo aparece si el navegador ofrece instalar la PWA) */}
+            {/* Install app button */}
             <InstallButton />
 
             {/* Dashboard button (shown when on news page) */}
@@ -123,29 +135,29 @@ export default function Header({
               </button>
             )}
 
-            {/* Market News button */}
-            <button
-              onClick={() => router.push("/news")}
-              aria-current={isNewsPage ? "page" : undefined}
-              className={`relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm ${isNewsPage
-                  ? "bg-cyan-300/10 text-cyan-300 sm:bg-transparent sm:after:absolute sm:after:inset-x-2 sm:after:-bottom-0.5 sm:after:h-px sm:after:bg-cyan-300"
-                  : "text-slate-300 hover:bg-white/5 hover:text-cyan-300 sm:hover:bg-transparent"
-                }`}
-              title="Market News"
-            >
-              <Newspaper className="w-4 h-4 text-cyan-400" />
-              <span className="hidden sm:inline font-semibold whitespace-nowrap">MarketNews</span>
-            </button>
+            {/* Market News button (only shown when not on news page) */}
+            {!isNewsPage && (
+              <button
+                onClick={() => router.push("/news")}
+                className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-cyan-300 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm"
+                title="Market News"
+              >
+                <Newspaper className="w-4 h-4 text-cyan-400" />
+                <span className="hidden sm:inline font-semibold whitespace-nowrap">MarketNews</span>
+              </button>
+            )}
 
-            {/* Change pair button */}
-            <button
-              onClick={handleCambiarMoneda}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm"
-              title="Change Trading Pair"
-            >
-              <ArrowLeftRight className="w-4 h-4 text-[#00f5c4]" />
-              <span className="hidden sm:inline font-semibold whitespace-nowrap">Change Pair</span>
-            </button>
+            {/* Change pair button (only on dashboard) */}
+            {!isNewsPage && (
+              <button
+                onClick={handleCambiarMoneda}
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-none p-0 text-slate-300 transition-colors hover:bg-white/5 hover:text-[#00f5c4] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5c4]/60 sm:h-auto sm:w-auto sm:gap-2 sm:px-2 sm:py-2 sm:text-sm"
+                title="Change Trading Pair"
+              >
+                <ArrowLeftRight className="w-4 h-4 text-[#00f5c4]" />
+                <span className="hidden sm:inline font-semibold whitespace-nowrap">Change Pair</span>
+              </button>
+            )}
 
             {market === "crypto" && onProviderChange && (
               <label className="flex items-center gap-1.5 px-1 py-1 text-[10px] sm:text-xs font-semibold text-slate-500">
@@ -170,7 +182,7 @@ export default function Header({
             </span>
           )}
 
-          {/* Selector compacto: las demás temporalidades se alcanzan deslizando horizontalmente. */}
+          {/* Selector compacto de temporalidades (solo en dashboard cuando se provee callback) */}
           {onTimeframeChange && (
             <div className="flex w-[min(100%,8rem)] flex-none items-center gap-0 sm:w-[min(100%,9rem)] sm:gap-1 lg:w-[min(100%,12rem)]">
               <button
