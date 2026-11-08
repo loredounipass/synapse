@@ -415,9 +415,17 @@ def get_trading_system_prompt(indicator_data=None, global_context=None, model_na
         "OR when you formulate a formal trade recommendation with Entry, Stop Loss, and Take Profit, YOU MUST CALL `create_trading_setup`! "
         "When calling `create_trading_setup`: "
         "1. Ensure mathematical coherence: for LONG, stop_loss < entry_price < take_profit; for SHORT, take_profit < entry_price < stop_loss. "
-        "2. Include dynamic multi-indicator conditions in the `conditions` parameter reflecting the technical confirmations required (e.g., RSI zone, Squeeze Momentum state, ADX strength, candle volume). Do not leave conditions empty when the strategy requires technical validation. "
+        "2. ALL INDICATORS & LEVELS ARE FULLY AVAILABLE: You and the user determine the required confirmation conditions based on the actual strategy and market data. "
+        "NEVER limit yourself to just RSI and Squeeze! The system evaluates ANY technical indicator or level present in the live Redis feed: "
+        "- Supports & Resistances: `s1`, `s2`, `s3`, `r1`, `r2`, `r3`, `soporte`, `resistencia` "
+        "- Moving Averages & Bands: `ema50`, `ema100`, `ema200`, `bb_upper`, `bb_middle`, `bb_lower` "
+        "- Oscillators & Momentum: `rsi`, `stoch_k`, `stoch_d`, `rsi_stoch`, `macd_hist`, `macd_line`, `macd_signal`, `adx`, `plus_di`, `minus_di`, `squeeze_momentum`, `squeeze_state`, `cci`, `mfi` "
+        "- Volume & Liquidity: `volCandle` (candle quote volume), `volCandleBase`, `volumen` (24h), `buyer_percent`, `bid_volume`, `ask_volume`, `spread` "
+        "- Order Flow: `order_flow_delta`, `order_flow_delta_percent`, `order_flow_buy_volume`, `order_flow_sell_volume`, `order_flow_trade_count` "
+        "- Price Action: `candle_close`, `candle_open`, `candle_high`, `candle_low`, `nearest_order_block_top`, `nearest_order_block_bottom`, `fvg_top`, `fvg_bottom`, `swing_high`, `swing_low` "
+        "Select strictly the relevant conditions that validate your thesis (or compare price against levels, e.g., price >= s1). Do not leave conditions empty when validation is needed, but never invent fake indicator names. "
         "3. Provide clear explanatory notes in `notes`. "
-        "You can also call `list_trading_setups` to view the user's active setups, `update_trading_setup` to adjust levels or invalidation criteria, and `delete_trading_setup` to cancel a setup.\n\n"
+        "You can also call `list_trading_setups` to view active setups, `update_trading_setup` to adjust levels or invalidation criteria, and `delete_trading_setup` to cancel a setup.\n\n"
     )
     if web_search_enabled:
         base += (

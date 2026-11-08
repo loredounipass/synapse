@@ -77,7 +77,7 @@ export function SetupsModal({
   return (
     <>
       <div className="fixed inset-0 z-[105] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-5xl bg-[#0c1420] border border-[#1b2b3d] rounded-2xl shadow-2xl overflow-hidden font-mono text-slate-200 max-h-[92vh] flex flex-col">
+        <div className="w-full max-w-6xl h-[88vh] min-h-[620px] max-h-[94vh] bg-[#0c1420] border border-[#1b2b3d] rounded-2xl shadow-2xl overflow-hidden font-mono text-slate-200 flex flex-col">
           {/* 1. Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#142335] bg-[#070c14]">
             <div className="flex items-center gap-2.5">
@@ -194,12 +194,12 @@ export function SetupsModal({
           </div>
 
           {/* 4. Footer */}
-          <div className="px-6 py-3 border-t border-[#142335] bg-[#070c14] flex items-center justify-between text-[11px] text-slate-500">
+          <div className="px-6 py-3 border-t border-[#142335] bg-[#070c14] flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
             <div>
-              💡 <span className="text-slate-400">Tip:</span> También puedes pedirle a{" "}
-              <span className="text-[#00f5c4] font-bold">Woody Agent</span> desde el chat:{" "}
+              💡 <span className="text-slate-400">Tip:</span> Puedes configurar tú mismo o pedirle a{" "}
+              <span className="text-[#00f5c4] font-bold">Woody Agent</span> desde el chat cualquier condición técnica:{" "}
               <span className="italic text-slate-300">
-                &quot;formula un setup de compra en {symbol || "BTCUSDT"} con SL, TP y condiciones de RSI y Squeeze&quot;
+                soportes y resistencias (S1-S3, R1-R3), Order Flow Delta, EMAs, MACD, volumen o acción del precio
               </span>
             </div>
             <button

@@ -45,12 +45,28 @@ class TestConditionEvaluator(unittest.TestCase):
             },
             "ema50": 103000.0,
             "ema200": 101000.0,
+            "s1": 103500.0,
+            "s2": 102800.0,
+            "s3": 101500.0,
+            "r1": 105000.0,
+            "r2": 106200.0,
+            "r3": 107500.0,
             "history": {
                 "opens": [103800.0, 104000.0],
                 "highs": [104500.0, 104600.0],
                 "lows": [103700.0, 103900.0],
                 "closes": [104000.0, 104200.0],
             },
+            "orderBlocks": [
+                {"side": "bullish", "top": 103600.0, "bottom": 103200.0, "status": "active"}
+            ],
+            "fairValueGaps": [
+                {"side": "bullish", "top": 103900.0, "bottom": 103700.0, "status": "active"}
+            ],
+            "liquiditySwings": [
+                {"side": "high", "price": 104800.0},
+                {"side": "low", "price": 103100.0}
+            ],
         }
 
     def test_single_condition_numeric_passed(self):
@@ -85,6 +101,45 @@ class TestConditionEvaluator(unittest.TestCase):
         res = evaluate_single_condition(cond, self.mock_payload)
         self.assertTrue(res["passed"])
         self.assertEqual(res["actual_value"], -79077.0)
+
+    def test_support_and_resistance_conditions(self):
+        # s1 = 103500.0, precio = 104200.0 -> precio >= s1
+        cond_s1 = {"indicator": "s1", "operator": "<=", "value": 104000.0}
+        res_s1 = evaluate_single_condition(cond_s1, self.mock_payload)
+        self.assertTrue(res_s1["passed"])
+        self.assertEqual(res_s1["actual_value"], 103500.0)
+
+        # soporte dinámico más cercano
+        cond_sop = {"indicator": "soporte", "operator": "==", "value": 103500.0}
+        res_sop = evaluate_single_condition(cond_sop, self.mock_payload)
+        self.assertTrue(res_sop["passed"])
+
+        # resistencia dinámica más cercana
+        cond_res = {"indicator": "resistencia", "operator": "==", "value": 105000.0}
+        res_res = evaluate_single_condition(cond_res, self.mock_payload)
+        self.assertTrue(res_res["passed"])
+
+    def test_indicator_to_indicator_comparison(self):
+        # precio (104200) >= s1 (103500)
+        cond_cross = {"indicator": "precio", "operator": ">=", "value": "s1"}
+        res_cross = evaluate_single_condition(cond_cross, self.mock_payload)
+        self.assertTrue(res_cross["passed"])
+
+        # candle_close (104200) > ema50 (103000)
+        cond_ema = {"indicator": "candle_close", "operator": ">", "value": "ema50"}
+        res_ema = evaluate_single_condition(cond_ema, self.mock_payload)
+        self.assertTrue(res_ema["passed"])
+
+    def test_dot_notation_and_indexing(self):
+        # history.closes[-1] == 104200.0
+        cond_hist = {"indicator": "history.closes[-1]", "operator": "==", "value": 104200.0}
+        res_hist = evaluate_single_condition(cond_hist, self.mock_payload)
+        self.assertTrue(res_hist["passed"])
+
+        # nearest_order_block_top == 103600.0
+        cond_ob = {"indicator": "nearest_order_block_top", "operator": "==", "value": 103600.0}
+        res_ob = evaluate_single_condition(cond_ob, self.mock_payload)
+        self.assertTrue(res_ob["passed"])
 
     def test_all_conditions_pass(self):
         conditions = [

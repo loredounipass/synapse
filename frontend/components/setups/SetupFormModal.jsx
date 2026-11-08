@@ -102,7 +102,7 @@ export function SetupFormModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#0c1420] border border-[#1b2b3d] rounded-2xl shadow-2xl overflow-hidden font-mono text-slate-200 max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-3xl h-[88vh] min-h-[620px] max-h-[94vh] bg-[#0c1420] border border-[#1b2b3d] rounded-2xl shadow-2xl overflow-hidden font-mono text-slate-200 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#142335] bg-[#070c14]">
           <div className="flex items-center gap-2 text-[#00f5c4] font-bold text-sm">

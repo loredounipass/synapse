@@ -123,6 +123,85 @@ def _extract_indicator_value(indicator_name: str, payload: Dict[str, Any]) -> An
     if key in ("bblower", "bb_lower"):
         return payload.get("bbLower")
 
+    # Soportes y Resistencias (Pivots Clásicos y Dinámicos)
+    if key in ("s1", "soporte1", "soporte_1", "support1", "support_1"):
+        return payload.get("s1")
+    if key in ("s2", "soporte2", "soporte_2", "support2", "support_2"):
+        return payload.get("s2")
+    if key in ("s3", "soporte3", "soporte_3", "support3", "support_3"):
+        return payload.get("s3")
+    if key in ("r1", "resistencia1", "resistencia_1", "resistance1", "resistance_1"):
+        return payload.get("r1")
+    if key in ("r2", "resistencia2", "resistencia_2", "resistance2", "resistance_2"):
+        return payload.get("r2")
+    if key in ("r3", "resistencia3", "resistencia_3", "resistance3", "resistance_3"):
+        return payload.get("r3")
+
+    if key in ("soporte", "support", "nearest_support", "soporte_cercano"):
+        price = payload.get("precio")
+        supports = [s for s in (payload.get("s1"), payload.get("s2"), payload.get("s3")) if s is not None]
+        if price is not None and supports:
+            below = [s for s in supports if s <= price]
+            return max(below) if below else max(supports)
+        return supports[0] if supports else None
+
+    if key in ("resistencia", "resistance", "nearest_resistance", "resistencia_cercana"):
+        price = payload.get("precio")
+        resistances = [r for r in (payload.get("r1"), payload.get("r2"), payload.get("r3")) if r is not None]
+        if price is not None and resistances:
+            above = [r for r in resistances if r >= price]
+            return min(above) if above else min(resistances)
+        return resistances[0] if resistances else None
+
+    # Zonas de Price Action (Order Blocks, FVG, Swings)
+    if key in ("nearest_order_block_top", "ob_top", "order_block_top"):
+        obs = [ob for ob in payload.get("orderBlocks", []) if isinstance(ob, dict) and ob.get("status") == "active"]
+        price = payload.get("precio") or 0
+        if obs:
+            closest = min(obs, key=lambda ob: abs(ob.get("top", 0) - price))
+            return closest.get("top")
+        return None
+
+    if key in ("nearest_order_block_bottom", "ob_bottom", "order_block_bottom"):
+        obs = [ob for ob in payload.get("orderBlocks", []) if isinstance(ob, dict) and ob.get("status") == "active"]
+        price = payload.get("precio") or 0
+        if obs:
+            closest = min(obs, key=lambda ob: abs(ob.get("bottom", 0) - price))
+            return closest.get("bottom")
+        return None
+
+    if key in ("fvg_top", "fair_value_gap_top"):
+        fvgs = [f for f in payload.get("fairValueGaps", []) if isinstance(f, dict) and f.get("status") == "active"]
+        price = payload.get("precio") or 0
+        if fvgs:
+            closest = min(fvgs, key=lambda f: abs(f.get("top", 0) - price))
+            return closest.get("top")
+        return None
+
+    if key in ("fvg_bottom", "fair_value_gap_bottom"):
+        fvgs = [f for f in payload.get("fairValueGaps", []) if isinstance(f, dict) and f.get("status") == "active"]
+        price = payload.get("precio") or 0
+        if fvgs:
+            closest = min(fvgs, key=lambda f: abs(f.get("bottom", 0) - price))
+            return closest.get("bottom")
+        return None
+
+    if key in ("swing_high", "liquidity_swing_high"):
+        swings = [s.get("price") for s in payload.get("liquiditySwings", []) if isinstance(s, dict) and s.get("side") == "high" and "price" in s]
+        return swings[-1] if swings else None
+
+    if key in ("swing_low", "liquidity_swing_low"):
+        swings = [s.get("price") for s in payload.get("liquiditySwings", []) if isinstance(s, dict) and s.get("side") == "low" and "price" in s]
+        return swings[-1] if swings else None
+
+    # Señales agregadas
+    if key in ("buy_signals", "buysignals", "buy_signal_count"):
+        return payload.get("buySignals")
+    if key in ("sell_signals", "sellsignals", "sell_signal_count"):
+        return payload.get("sellSignals")
+    if key in ("neutral_signals", "neutralsignals"):
+        return payload.get("neutralSignals")
+
     # Métricas de Order Flow (Tape o Proxy)
     order_flow = payload.get("orderFlow") or payload.get("order_flow")
     if isinstance(order_flow, dict):
@@ -163,9 +242,10 @@ def _extract_indicator_value(indicator_name: str, payload: Dict[str, Any]) -> An
             except (ValueError, TypeError):
                 pass
 
-    # Soporte para notación por punto (ej: order_flow.delta, orderFlow.delta, history.closes)
-    if "." in key:
-        parts = key.split(".")
+    # Soporte para notación por punto y corchetes (ej: orderFlow.delta, history.closes[-1])
+    if "." in key or "[" in key:
+        normalized_path = key.replace("[", ".").replace("]", "").replace("..", ".")
+        parts = [p.strip() for p in normalized_path.split(".") if p.strip()]
         curr_obj = payload
         for part in parts:
             if isinstance(curr_obj, dict):
@@ -175,6 +255,16 @@ def _extract_indicator_value(indicator_name: str, payload: Dict[str, Any]) -> An
                         match = v
                         break
                 curr_obj = match
+            elif isinstance(curr_obj, (list, tuple)):
+                try:
+                    idx = int(part)
+                    curr_obj = curr_obj[idx]
+                except (ValueError, IndexError):
+                    if part.lower() in ("last", "-1") and len(curr_obj) > 0:
+                        curr_obj = curr_obj[-1]
+                    else:
+                        curr_obj = None
+                        break
             else:
                 curr_obj = None
                 break
@@ -223,7 +313,15 @@ def evaluate_single_condition(
     try:
         # Comparación numérica o textual
         if isinstance(actual_value, (int, float)) and target_value is not None:
-            num_target = float(target_value)
+            try:
+                num_target = float(target_value)
+            except (ValueError, TypeError):
+                # Intentar resolver target_value como otro indicador de referencia (ej: precio >= s1)
+                ref_val = _extract_indicator_value(str(target_value), payload)
+                if ref_val is not None:
+                    num_target = float(ref_val)
+                else:
+                    raise ValueError(f"No se pudo resolver el valor objetivo '{target_value}' numéricamente ni como indicador.")
             passed = bool(op_func(float(actual_value), num_target))
         elif isinstance(actual_value, str):
             str_actual = actual_value.strip().upper()

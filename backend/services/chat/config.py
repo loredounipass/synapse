@@ -218,7 +218,7 @@ CHAT_TOOLS = [
                             "properties": {
                                 "indicator": {
                                     "type": "string",
-                                    "description": "Indicador técnico a evaluar: 'rsi', 'macd_hist', 'adx', 'squeeze_state', 'volCandle', 'buyer_percent', 'candle_close', 'ema50', 'ema200', etc."
+                                    "description": "Indicador técnico o nivel a evaluar (soporta TODOS los indicadores del sistema sin restricción): soportes y resistencias ('s1', 's2', 's3', 'r1', 'r2', 'r3', 'soporte', 'resistencia'), medias móviles ('ema50', 'ema100', 'ema200'), Bollinger ('bb_upper', 'bb_middle', 'bb_lower'), osciladores ('rsi', 'adx', 'macd_hist', 'squeeze_state', 'stoch_k', 'mfi'), order flow ('order_flow_delta', 'order_flow_delta_percent', 'order_flow_buy_volume', 'order_flow_sell_volume'), volumen ('volCandle', 'volumen', 'buyer_percent'), velas ('candle_close', 'candle_high', 'candle_low'), price action ('nearest_order_block_top', 'fvg_top', 'swing_high'), etc."
                                 },
                                 "operator": {
                                     "type": "string",

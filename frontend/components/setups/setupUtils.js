@@ -3,20 +3,75 @@
  */
 
 export const AVAILABLE_INDICATORS = [
-  { value: "rsi", label: "RSI (14)", type: "number", defaultOp: "<=", defaultVal: 35 },
-  { value: "squeeze_state", label: "Squeeze Estado", type: "string", defaultOp: "==", defaultVal: "ON" },
-  { value: "squeeze_momentum", label: "Squeeze Impulso", type: "number", defaultOp: ">", defaultVal: 0 },
-  { value: "macd_hist", label: "MACD Histograma", type: "number", defaultOp: ">", defaultVal: 0 },
-  { value: "adx", label: "ADX Fuerza Tendencial", type: "number", defaultOp: ">=", defaultVal: 25 },
-  { value: "volCandle", label: "Volumen Vela Actual", type: "number", defaultOp: ">", defaultVal: 500 },
-  { value: "candle_close", label: "Precio Cierre Vela", type: "number", defaultOp: ">", defaultVal: 0 },
-  { value: "buyer_percent", label: "Dominancia Compradora (%)", type: "number", defaultOp: ">=", defaultVal: 55 },
-  { value: "order_flow_delta", label: "Order Flow Delta ($)", type: "number", defaultOp: "<", defaultVal: -20000 },
-  { value: "order_flow_delta_percent", label: "Order Flow Delta (%)", type: "number", defaultOp: "<", defaultVal: -15 },
-  { value: "ema50", label: "EMA 50", type: "number", defaultOp: ">", defaultVal: 0 },
-  { value: "ema200", label: "EMA 200", type: "number", defaultOp: ">", defaultVal: 0 },
-  { value: "stoch_k", label: "Estocástico %K", type: "number", defaultOp: "<=", defaultVal: 20 },
-  { value: "mfi", label: "Money Flow Index (MFI)", type: "number", defaultOp: "<=", defaultVal: 30 },
+  // Soportes y Resistencias (Pivots Clásicos y Dinámicos)
+  { value: "s1", label: "Soporte 1 (S1 - Pivote)", category: "Soportes y Resistencias", type: "number", defaultOp: ">=", defaultVal: 0 },
+  { value: "s2", label: "Soporte 2 (S2 - Pivote)", category: "Soportes y Resistencias", type: "number", defaultOp: ">=", defaultVal: 0 },
+  { value: "s3", label: "Soporte 3 (S3 - Pivote)", category: "Soportes y Resistencias", type: "number", defaultOp: ">=", defaultVal: 0 },
+  { value: "r1", label: "Resistencia 1 (R1 - Pivote)", category: "Soportes y Resistencias", type: "number", defaultOp: "<=", defaultVal: 0 },
+  { value: "r2", label: "Resistencia 2 (R2 - Pivote)", category: "Soportes y Resistencias", type: "number", defaultOp: "<=", defaultVal: 0 },
+  { value: "r3", label: "Resistencia 3 (R3 - Pivote)", category: "Soportes y Resistencias", type: "number", defaultOp: "<=", defaultVal: 0 },
+  { value: "soporte", label: "Soporte más cercano (Dinámico)", category: "Soportes y Resistencias", type: "number", defaultOp: ">=", defaultVal: 0 },
+  { value: "resistencia", label: "Resistencia más cercana (Dinámica)", category: "Soportes y Resistencias", type: "number", defaultOp: "<=", defaultVal: 0 },
+
+  // Medias Móviles y Bandas
+  { value: "ema50", label: "EMA 50 (Media Móvil Rápida)", category: "Medias y Bandas", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "ema100", label: "EMA 100 (Media Móvil Media)", category: "Medias y Bandas", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "ema200", label: "EMA 200 (Media Móvil Institucional)", category: "Medias y Bandas", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "bb_upper", label: "Bollinger Band Superior", category: "Medias y Bandas", type: "number", defaultOp: "<=", defaultVal: 0 },
+  { value: "bb_middle", label: "Bollinger Band Media", category: "Medias y Bandas", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "bb_lower", label: "Bollinger Band Inferior", category: "Medias y Bandas", type: "number", defaultOp: ">=", defaultVal: 0 },
+
+  // Osciladores y Momentum
+  { value: "rsi", label: "RSI (14)", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: 35 },
+  { value: "squeeze_state", label: "Squeeze Estado (ON/OFF)", category: "Osciladores y Momentum", type: "string", defaultOp: "==", defaultVal: "ON" },
+  { value: "squeeze_momentum", label: "Squeeze Momentum (Histograma)", category: "Osciladores y Momentum", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "macd_hist", label: "MACD Histograma", category: "Osciladores y Momentum", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "macd_line", label: "MACD Línea", category: "Osciladores y Momentum", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "macd_signal", label: "MACD Señal", category: "Osciladores y Momentum", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "adx", label: "ADX Fuerza Tendencial", category: "Osciladores y Momentum", type: "number", defaultOp: ">=", defaultVal: 25 },
+  { value: "plus_di", label: "+DI Direccional Alcista", category: "Osciladores y Momentum", type: "number", defaultOp: ">", defaultVal: 20 },
+  { value: "minus_di", label: "-DI Direccional Bajista", category: "Osciladores y Momentum", type: "number", defaultOp: "<", defaultVal: 20 },
+  { value: "stoch_k", label: "Estocástico %K", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: 20 },
+  { value: "stoch_d", label: "Estocástico %D", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: 20 },
+  { value: "rsi_stoch", label: "Stoch RSI %K", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: 20 },
+  { value: "rsi_stoch_d", label: "Stoch RSI %D", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: 20 },
+  { value: "cci", label: "CCI (Commodity Channel)", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: -100 },
+  { value: "mfi", label: "Money Flow Index (MFI)", category: "Osciladores y Momentum", type: "number", defaultOp: "<=", defaultVal: 30 },
+
+  // Volumen y Liquidez
+  { value: "volCandle", label: "Volumen Vela Actual ($/USDT)", category: "Volumen y Liquidez", type: "number", defaultOp: ">", defaultVal: 500 },
+  { value: "volCandleBase", label: "Volumen Vela en Activo Base", category: "Volumen y Liquidez", type: "number", defaultOp: ">", defaultVal: 10 },
+  { value: "volumen", label: "Volumen Total 24h", category: "Volumen y Liquidez", type: "number", defaultOp: ">", defaultVal: 1000000 },
+  { value: "buyer_percent", label: "Dominancia Compradora (%)", category: "Volumen y Liquidez", type: "number", defaultOp: ">=", defaultVal: 55 },
+  { value: "bid_volume", label: "Volumen Libro Bids", category: "Volumen y Liquidez", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "ask_volume", label: "Volumen Libro Asks", category: "Volumen y Liquidez", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "spread", label: "Spread Bid-Ask ($)", category: "Volumen y Liquidez", type: "number", defaultOp: "<=", defaultVal: 1 },
+
+  // Order Flow
+  { value: "order_flow_delta", label: "Order Flow Delta Neto ($)", category: "Order Flow", type: "number", defaultOp: "<", defaultVal: -20000 },
+  { value: "order_flow_delta_percent", label: "Order Flow Delta (%)", category: "Order Flow", type: "number", defaultOp: "<", defaultVal: -15 },
+  { value: "order_flow_buy_volume", label: "Order Flow Volumen Compra", category: "Order Flow", type: "number", defaultOp: ">", defaultVal: 50000 },
+  { value: "order_flow_sell_volume", label: "Order Flow Volumen Venta", category: "Order Flow", type: "number", defaultOp: ">", defaultVal: 50000 },
+  { value: "order_flow_trade_count", label: "Order Flow Conteo Trades", category: "Order Flow", type: "number", defaultOp: ">", defaultVal: 100 },
+
+  // Price Action y Velas
+  { value: "candle_close", label: "Precio Cierre Vela", category: "Acción de Precio", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "candle_open", label: "Precio Apertura Vela", category: "Acción de Precio", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "candle_high", label: "Precio Máximo Vela", category: "Acción de Precio", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "candle_low", label: "Precio Mínimo Vela", category: "Acción de Precio", type: "number", defaultOp: ">", defaultVal: 0 },
+  { value: "nearest_order_block_top", label: "Order Block Cercano (Techo)", category: "Acción de Precio", type: "number", defaultOp: "<=", defaultVal: 0 },
+  { value: "nearest_order_block_bottom", label: "Order Block Cercano (Suelo)", category: "Acción de Precio", type: "number", defaultOp: ">=", defaultVal: 0 },
+  { value: "fvg_top", label: "Fair Value Gap (Techo)", category: "Acción de Precio", type: "number", defaultOp: "<=", defaultVal: 0 },
+  { value: "fvg_bottom", label: "Fair Value Gap (Suelo)", category: "Acción de Precio", type: "number", defaultOp: ">=", defaultVal: 0 },
+  { value: "swing_high", label: "Swing High (Máximo Estructural)", category: "Acción de Precio", type: "number", defaultOp: "<", defaultVal: 0 },
+  { value: "swing_low", label: "Swing Low (Mínimo Estructural)", category: "Acción de Precio", type: "number", defaultOp: ">", defaultVal: 0 },
+
+  // Señales
+  { value: "buy_signals", label: "Conteo Señales de Compra", category: "Señales", type: "number", defaultOp: ">=", defaultVal: 5 },
+  { value: "sell_signals", label: "Conteo Señales de Venta", category: "Señales", type: "number", defaultOp: ">=", defaultVal: 5 },
+
+  // Personalizado / Libre
+  { value: "custom", label: "Otro Indicador (Campo Libre)", category: "Personalizado", type: "custom", defaultOp: "==", defaultVal: "" },
 ]
 
 export const COMPARISON_OPERATORS = [

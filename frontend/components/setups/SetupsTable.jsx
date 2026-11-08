@@ -23,11 +23,13 @@ export function SetupsTable({
 }) {
   if (setups.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 rounded-xl bg-[#070c14] border border-[#142335] text-center space-y-2 font-mono">
-        <Sliders className="w-8 h-8 text-slate-600" />
-        <div className="text-xs font-bold text-slate-400">NO HAY SETUPS REGISTRADOS</div>
-        <p className="text-[11px] text-slate-500 max-w-sm">
-          Crea un nuevo setup manual o pídele a Woody Agent desde el chat que formule una operación con confirmaciones técnicas.
+      <div className="min-h-[360px] flex flex-col items-center justify-center p-8 rounded-xl bg-[#070c14] border border-[#142335] text-center space-y-3 font-mono">
+        <div className="p-3 rounded-2xl bg-[#0c1420] border border-[#1b2b3d] text-[#00f5c4]">
+          <Sliders className="w-8 h-8 stroke-[1.75]" />
+        </div>
+        <div className="text-sm font-bold text-slate-300 tracking-wide">NO HAY SETUPS REGISTRADOS</div>
+        <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+          Crea un nuevo setup manual con el botón superior o pídele a Woody Agent en el chat que formule una estrategia con confirmaciones de soporte, resistencia, volumen u order flow.
         </p>
       </div>
     )
