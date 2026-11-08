@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import random
 import threading
 import time
 from datetime import datetime
@@ -157,12 +158,27 @@ class AlpacaStockStream:
             connection = None
             try:
                 connection = websocket.create_connection(url, timeout=20)
+
+                # Paso 1: Consumir frame inicial de bienvenida del servidor Alpaca [{"T":"success","msg":"connected"}]
+                greeting_raw = connection.recv()
+                greeting = json.loads(greeting_raw)
+                greeting_msgs = greeting if isinstance(greeting, list) else [greeting]
+                is_connected = any(
+                    m.get("T") == "success" and m.get("msg") == "connected"
+                    for m in greeting_msgs
+                    if isinstance(m, dict)
+                )
+                if not is_connected:
+                    logger.debug("[AlpacaStream] Mensaje inicial del servidor: %s", greeting_msgs)
+
+                # Paso 2: Transmitir credenciales y verificar confirmación de autenticación
                 connection.send(json.dumps({
                     "action": "auth",
                     "key": key,
                     "secret": secret,
                 }))
-                auth_response = json.loads(connection.recv())
+                auth_raw = connection.recv()
+                auth_response = json.loads(auth_raw)
                 messages = auth_response if isinstance(auth_response, list) else [auth_response]
                 if not any(
                     message.get("T") == "success"
@@ -170,13 +186,19 @@ class AlpacaStockStream:
                     for message in messages
                     if isinstance(message, dict)
                 ):
-                    raise RuntimeError("Alpaca stock stream authentication was rejected.")
+                    error_detail = next(
+                        (m.get("msg") for m in messages if isinstance(m, dict) and m.get("T") == "error"),
+                        str(messages),
+                    )
+                    raise RuntimeError(f"Alpaca stock stream authentication was rejected: {error_detail}")
+
+                # Paso 3: Suscripción a trades en tiempo real para la lista de acciones configuradas
                 connection.send(json.dumps({
                     "action": "subscribe",
                     "trades": self.symbols,
                 }))
                 logger.info(
-                    "[AlpacaStream] conectado al feed IEX; simbolos suscritos=%s",
+                    "[AlpacaStream] Autenticado exitosamente en feed IEX; suscribiendo %d símbolos...",
                     len(self.symbols),
                 )
                 backoff = BASE_RECONNECT
@@ -185,8 +207,18 @@ class AlpacaStockStream:
                     raw = connection.recv()
                     messages = json.loads(raw)
                     for message in messages if isinstance(messages, list) else [messages]:
-                        if isinstance(message, dict) and message.get("T") == "t":
+                        if not isinstance(message, dict):
+                            continue
+                        msg_type = message.get("T")
+                        if msg_type == "t":
                             self.handle_trade(message)
+                        elif msg_type == "subscription":
+                            logger.info(
+                                "[AlpacaStream] Suscripción activa confirmada: %d acciones en streaming",
+                                len(message.get("trades", [])),
+                            )
+                        elif msg_type == "error":
+                            logger.warning("[AlpacaStream] Error recibido del feed: %s", message)
             except Exception as error:
                 logger.warning("[AlpacaStream] desconexion/error: %s", error)
             finally:
@@ -196,7 +228,8 @@ class AlpacaStockStream:
                     except Exception:
                         logger.debug("[AlpacaStream] cierre de socket fallo", exc_info=True)
             if self.running:
-                time.sleep(backoff)
+                jitter = random.uniform(0.5, 1.5)
+                time.sleep(backoff + jitter)
                 backoff = min(backoff * 2, MAX_RECONNECT)
 
 
