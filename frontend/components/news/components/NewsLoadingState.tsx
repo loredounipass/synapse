@@ -13,7 +13,7 @@ export function NewsLoadingState() {
         />
       </div>
       <p className="text-xs font-mono text-[#00f5c4] animate-pulse tracking-widest uppercase text-center">
-        SYNCHRONIZING TELEMETRY STREAM...
+        LOADING MARKET DATA...
       </p>
     </div>
   )

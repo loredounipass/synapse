@@ -212,7 +212,7 @@ export default function Dashboard({ moneda, market = "crypto", onCambiarMoneda }
           <div className="text-white text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.25em] animate-pulse text-center w-full flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
             <span>SYNAPSE</span>
             <span className="text-[#00f5c4]">•</span>
-            <span className="text-[#00f5c4]">SYNCHRONIZING TELEMETRY PIPELINE...</span>
+            <span className="text-[#00f5c4]">LOADING MARKET DATA...</span>
           </div>
         </div>
       </div>
