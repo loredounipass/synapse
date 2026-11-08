@@ -63,17 +63,25 @@ async function performTokenRefresh() {
 
         const data = await res.json().catch(() => null)
         if (!res.ok || !data || data.error) {
-          clearSession()
           const msg = data && data.error ? data.error : "Session expired. Please log in again."
-          notifyAuthRequired(msg)
+          // Solo si es un rechazo de autenticación (401, 403, 400 o error explícito) limpiamos la sesión
+          const isAuthRejection = res.status === 401 || res.status === 403 || res.status === 400 || (data && data.error)
+          if (isAuthRejection) {
+            clearSession()
+            notifyAuthRequired(msg)
+          }
           throw new Error(msg)
         }
 
         updateTokens(data)
         return data.access_token
       } catch (err) {
-        clearSession()
-        notifyAuthRequired(err.message || "Session expired")
+        // No destruir la sesión si fue solo un corte transitorio de red o timeout
+        const isNetworkErr = err.name === "AbortError" || /fetch|network|failed/i.test(err.message || "")
+        if (!isNetworkErr && !getRefreshToken()) {
+          clearSession()
+          notifyAuthRequired(err.message || "Session expired")
+        }
         throw err
       } finally {
         refreshPromise = null

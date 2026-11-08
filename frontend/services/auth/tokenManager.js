@@ -11,6 +11,9 @@
  *   synapse_expires_at     – timestamp (ms) de expiración del access token
  *
  * NO se parsea el JWT en el frontend: el backend controla la validez.
+ *
+ * El AuthProvider programa un refresh proactivo 2 min antes de la expiración
+ * usando getExpiresAt() para evitar cortes de sesión por inactividad.
  */
 
 const KEYS = {
@@ -53,13 +56,32 @@ export function getUser() {
   }
 }
 
-function getExpiresAt() {
+export function getExpiresAt() {
   try {
     const raw = localStorage.getItem(KEYS.expiresAt)
     return raw ? Number(raw) : 0
   } catch {
     return 0
   }
+}
+
+/**
+ * Milisegundos restantes hasta la expiración del access token.
+ * Retorna 0 si ya expiró o no existe.
+ */
+export function getTimeUntilExpiry() {
+  const expiresAt = getExpiresAt()
+  if (!expiresAt) return 0
+  return Math.max(0, expiresAt - Date.now())
+}
+
+/**
+ * Retorna true si el access token expira en menos del umbral (por defecto 2 minutos = 120,000 ms).
+ */
+export function isAccessTokenExpiringSoon(thresholdMs = 120_000) {
+  const expiresAt = getExpiresAt()
+  if (!expiresAt) return true
+  return expiresAt - Date.now() <= thresholdMs
 }
 
 // ── Setters ─────────────────────────────────────────────────────────
@@ -135,6 +157,13 @@ export function isAuthenticated() {
  */
 export function hasRefreshToken() {
   return !!getRefreshToken()
+}
+
+/**
+ * Verifica si hay una sesión recuperable (hay refresh token y usuario).
+ */
+export function hasActiveSession() {
+  return hasRefreshToken() && !!getUser()
 }
 
 // ── Utilidades internas ─────────────────────────────────────────────

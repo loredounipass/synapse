@@ -85,6 +85,30 @@ describe("Token Manager Unit Tests", () => {
 
     expect(tokenManager.isAuthenticated()).toBe(false)
   })
+
+  it("calculates time until expiry and detects tokens expiring soon", () => {
+    tokenManager.setSession({
+      access_token: "fresh-token",
+      refresh_token: "refresh-token",
+      expires_in: 900, // 15 min
+      user: { id: "1" },
+    })
+
+    expect(tokenManager.getTimeUntilExpiry()).toBeGreaterThan(800_000)
+    expect(tokenManager.isAccessTokenExpiringSoon(120_000)).toBe(false)
+    expect(tokenManager.hasActiveSession()).toBe(true)
+
+    // Token with only 60 seconds left
+    tokenManager.setSession({
+      access_token: "expiring-soon-token",
+      refresh_token: "refresh-token",
+      expires_in: 60,
+      user: { id: "1" },
+    })
+
+    expect(tokenManager.isAccessTokenExpiringSoon(120_000)).toBe(true)
+    expect(tokenManager.hasActiveSession()).toBe(true)
+  })
 })
 
 describe("Password Security Validation Rules", () => {

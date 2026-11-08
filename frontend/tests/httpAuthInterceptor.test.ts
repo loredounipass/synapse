@@ -172,4 +172,30 @@ describe("HTTP Client Auth Interceptor & Auto-Refresh", () => {
 
     window.removeEventListener(tokenManager.AUTH_REQUIRED_EVENT, authRequiredSpy)
   })
+
+  it("does not wipe session from storage on transient network error during token refresh", async () => {
+    tokenManager.setSession({
+      access_token: "expired-token",
+      refresh_token: "my-valid-refresh-token",
+      expires_in: 900,
+      user: { id: "user-abc", email: "trader@synapse.com" },
+    })
+
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({ error: "Token has expired." }),
+      })
+      .mockRejectedValueOnce(new TypeError("Failed to fetch")) // Network error / offline
+
+    await expect(
+      httpRequest("/trading/BTCUSDT", { retries: 0 }),
+    ).rejects.toThrow(/Failed to fetch/i)
+
+    // The refresh token and user MUST NOT be wiped on network glitches!
+    expect(tokenManager.getRefreshToken()).toBe("my-valid-refresh-token")
+    expect(tokenManager.getUser()).toEqual({ id: "user-abc", email: "trader@synapse.com" })
+    expect(tokenManager.hasActiveSession()).toBe(true)
+  })
 })
