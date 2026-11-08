@@ -9,6 +9,12 @@ import logging
 
 from services.chat.memory import search_chat_history
 from services.chat.web_search import web_search
+from services.chat.tools_setups import (
+    handle_create_trading_setup,
+    handle_list_trading_setups,
+    handle_update_trading_setup,
+    handle_delete_trading_setup,
+)
 from common.cache import get_stock_provider
 from database import chat_store
 
@@ -165,6 +171,14 @@ def run_tool_call(
             "title": result.get("title"),
             "renamed": result.get("renamed", False),
         }
+    elif fn_name == "create_trading_setup":
+        result, meta = handle_create_trading_setup(args, owner_id=owner_id, fetch_fn=_market_data_source)
+    elif fn_name == "list_trading_setups":
+        result, meta = handle_list_trading_setups(args, owner_id=owner_id)
+    elif fn_name == "update_trading_setup":
+        result, meta = handle_update_trading_setup(args, owner_id=owner_id, fetch_fn=_market_data_source)
+    elif fn_name == "delete_trading_setup":
+        result, meta = handle_delete_trading_setup(args, owner_id=owner_id)
     elif fn_name == "web_search":
         query = args.get("query", prompt)
         result = web_search(

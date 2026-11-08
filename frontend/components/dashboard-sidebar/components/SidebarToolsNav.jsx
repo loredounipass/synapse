@@ -20,9 +20,8 @@ export function SidebarToolsNav({
     <div className="overflow-hidden">
       {/* Etiqueta de sección con plegado suave */}
       <div
-        className={`px-2.5 pb-1 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isCollapsed ? "opacity-0 max-h-0 py-0" : "opacity-100 max-h-6"
-        }`}
+        className={`px-2.5 pb-1 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "opacity-0 max-h-0 py-0" : "opacity-100 max-h-6"
+          }`}
       >
         Herramientas & IA
       </div>
@@ -38,11 +37,10 @@ export function SidebarToolsNav({
             <Bot className="w-4 h-4 text-amber-400 animate-pulse" />
           </div>
           <div
-            className={`flex items-center justify-between flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isCollapsed
+            className={`flex items-center justify-between flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed
                 ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
                 : "opacity-100 max-w-[200px] translate-x-0 ml-1.5"
-            }`}
+              }`}
           >
             <span className="truncate whitespace-nowrap">Woody Agent</span>
             <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 whitespace-nowrap">
@@ -62,11 +60,10 @@ export function SidebarToolsNav({
             <BarChart3 className="w-4 h-4 text-emerald-400" />
           </div>
           <div
-            className={`flex items-center flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isCollapsed
+            className={`flex items-center flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed
                 ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
                 : "opacity-100 max-w-[200px] translate-x-0 ml-1.5"
-            }`}
+              }`}
           >
             <span className="truncate whitespace-nowrap">Gráfica de Velas</span>
           </div>
@@ -83,18 +80,17 @@ export function SidebarToolsNav({
             <Sliders className="w-4 h-4 text-[#00f5c4]" />
           </div>
           <div
-            className={`flex items-center flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isCollapsed
+            className={`flex items-center flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed
                 ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
                 : "opacity-100 max-w-[200px] translate-x-0 ml-1.5"
-            }`}
+              }`}
           >
             <span className="truncate whitespace-nowrap">Osciladores & Zonas</span>
           </div>
           <SidebarTooltip isCollapsed={isCollapsed} label="Osciladores & Indicadores" />
         </button>
 
-        {/* Alertas de Precio (Modal) */}
+        {/* Alertas Setup (Modal) */}
         <button
           type="button"
           onClick={onOpenAlerts}
@@ -104,20 +100,19 @@ export function SidebarToolsNav({
             <Bell className="w-4 h-4 text-yellow-400" />
           </div>
           <div
-            className={`flex items-center justify-between flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isCollapsed
+            className={`flex items-center justify-between flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed
                 ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
                 : "opacity-100 max-w-[200px] translate-x-0 ml-1.5"
-            }`}
+              }`}
           >
-            <span className="truncate whitespace-nowrap">Alertas de Precio</span>
+            <span className="truncate whitespace-nowrap">Alertas Setup</span>
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 whitespace-nowrap">
               {activeAlertsCount}
             </span>
           </div>
           <SidebarTooltip
             isCollapsed={isCollapsed}
-            label="Alertas de Precio"
+            label="Alertas Setup"
             badge={`${activeAlertsCount} activas`}
           />
         </button>
@@ -132,11 +127,10 @@ export function SidebarToolsNav({
             <Briefcase className="w-4 h-4 text-emerald-400" />
           </div>
           <div
-            className={`flex items-center justify-between flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isCollapsed
+            className={`flex items-center justify-between flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed
                 ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
                 : "opacity-100 max-w-[200px] translate-x-0 ml-1.5"
-            }`}
+              }`}
           >
             <span className="truncate whitespace-nowrap">Portafolio Demo</span>
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">

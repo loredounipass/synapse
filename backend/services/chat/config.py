@@ -158,6 +158,152 @@ CHAT_TOOLS = [
                 "required": ["title"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_trading_setup",
+            "description": "Crea un setup de trading formal en el sistema de alertas. Debe llamarse cuando formules o recomiendes un setup con entrada, stop loss y take profit, o cuando el usuario solicite registrar una alerta de setup. Permite configurar condiciones multi-indicador para validar la entrada.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Símbolo del activo (ej: 'BTCUSDT', 'ETHUSDT', 'AAPL')"
+                    },
+                    "direction": {
+                        "type": "string",
+                        "enum": ["LONG", "SHORT"],
+                        "description": "Dirección de la operación: LONG (compra) o SHORT (venta)"
+                    },
+                    "entry_price": {
+                        "type": "number",
+                        "description": "Precio numérico de entrada / activación"
+                    },
+                    "stop_loss": {
+                        "type": "number",
+                        "description": "Precio de stop loss o invalidación de la estructura"
+                    },
+                    "take_profit": {
+                        "type": "number",
+                        "description": "Precio objetivo de toma de ganancia (Target)"
+                    },
+                    "market": {
+                        "type": "string",
+                        "enum": ["crypto", "stock"],
+                        "description": "Tipo de mercado: 'crypto' o 'stock'"
+                    },
+                    "provider": {
+                        "type": "string",
+                        "enum": ["binance", "coinbase", "alpaca", "yahoo"],
+                        "description": "Proveedor de datos de mercado"
+                    },
+                    "timeframe": {
+                        "type": "string",
+                        "description": "Temporalidad para la evaluación (ej: '15m', '1h', '4h')"
+                    },
+                    "risk_amount": {
+                        "type": "number",
+                        "description": "Riesgo en dólares asignado al setup (opcional)"
+                    },
+                    "risk_percent": {
+                        "type": "number",
+                        "description": "Porcentaje de riesgo de la cuenta (ej: 1.0 para 1%)"
+                    },
+                    "conditions": {
+                        "type": "array",
+                        "description": "Lista de condiciones multi-indicador para activar el setup. Ej: [{'indicator': 'rsi', 'operator': '<=', 'value': 35, 'label': 'RSI <= 35'}, {'indicator': 'volCandle', 'operator': '>', 'value': 500, 'label': 'Volumen > 500'}]",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "indicator": {
+                                    "type": "string",
+                                    "description": "Indicador técnico a evaluar: 'rsi', 'macd_hist', 'adx', 'squeeze_state', 'volCandle', 'buyer_percent', 'candle_close', 'ema50', 'ema200', etc."
+                                },
+                                "operator": {
+                                    "type": "string",
+                                    "enum": [">", ">=", "<", "<=", "==", "!="],
+                                    "description": "Operador relacional matemático"
+                                },
+                                "value": {
+                                    "description": "Valor numérico o cadena de umbral esperado (ej: 35.0, 'ON', 500)"
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "description": "Descripción humana de la regla de confirmación"
+                                }
+                            },
+                            "required": ["indicator", "operator", "value"]
+                        }
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Tesis o justificación técnica detallada del setup"
+                    }
+                },
+                "required": ["symbol", "direction", "entry_price", "stop_loss", "take_profit"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_trading_setups",
+            "description": "Lista los setups de trading registrados por el usuario. Permite consultar setups activos o historial para dar seguimiento.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": ["PENDING", "ACTIVATED", "INVALIDATED", "ALL"],
+                        "description": "Filtrar por estado del setup"
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Filtrar por símbolo de activo"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_trading_setup",
+            "description": "Modifica los niveles o condiciones de un setup existente.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "setup_id": {
+                        "type": "string",
+                        "description": "UUID del setup a modificar"
+                    },
+                    "entry_price": {"type": "number"},
+                    "stop_loss": {"type": "number"},
+                    "take_profit": {"type": "number"},
+                    "conditions": {"type": "array"},
+                    "notes": {"type": "string"}
+                },
+                "required": ["setup_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_trading_setup",
+            "description": "Elimina o cancela un setup de trading del usuario.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "setup_id": {
+                        "type": "string",
+                        "description": "UUID del setup a eliminar"
+                    }
+                },
+                "required": ["setup_id"]
+            }
+        }
     }
 ]
 

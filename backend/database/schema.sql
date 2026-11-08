@@ -54,3 +54,34 @@ CREATE INDEX IF NOT EXISTS chat_sessions_owner_updated_idx
     ON chat_sessions (owner_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS chat_messages_session_timestamp_idx
     ON chat_messages (session_id, timestamp, id);
+
+-- ─── Trading Setups ──────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS trading_setups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL,
+    symbol TEXT NOT NULL,
+    market TEXT NOT NULL DEFAULT 'crypto' CHECK (market IN ('crypto', 'stock')),
+    provider TEXT NOT NULL DEFAULT 'coinbase' CHECK (provider IN ('binance', 'coinbase', 'alpaca', 'yahoo')),
+    timeframe TEXT NOT NULL DEFAULT '15m',
+    direction TEXT NOT NULL CHECK (direction IN ('LONG', 'SHORT')),
+    entry_price DOUBLE PRECISION NOT NULL,
+    stop_loss DOUBLE PRECISION NOT NULL,
+    take_profit DOUBLE PRECISION NOT NULL,
+    risk_amount DOUBLE PRECISION DEFAULT 0.0,
+    risk_percent DOUBLE PRECISION DEFAULT 0.0,
+    reward_amount DOUBLE PRECISION DEFAULT 0.0,
+    rr_ratio DOUBLE PRECISION DEFAULT 0.0,
+    conditions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACTIVATED', 'INVALIDATED', 'CANCELLED', 'CLOSED')),
+    invalidation_reason TEXT,
+    evaluation_details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS trading_setups_owner_status_idx
+    ON trading_setups (owner_id, status);
+CREATE INDEX IF NOT EXISTS trading_setups_symbol_idx
+    ON trading_setups (symbol, provider);
+

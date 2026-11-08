@@ -409,6 +409,15 @@ def get_trading_system_prompt(indicator_data=None, global_context=None, model_na
         "You are also equipped with `rename_chat_session`. Once the user has supplied a meaningful topic, call it to assign the current session a concise, accurate title based on the actual conversation. "
         "If the current session name is the generic '[symbol] Analysis' and its history already has a meaningful topic, rename it based on that history. "
         "Do not rename on a greeting or invent a topic. For later turns, use the stored context and rename again only if the conversation meaningfully changes topic.\n\n"
+        "=== TRADING SETUPS & ALERTS CAPABILITY (MCP) ===\n"
+        "You are equipped with tools to manage official trading setups in the system: `create_trading_setup`, `list_trading_setups`, `update_trading_setup`, and `delete_trading_setup`. "
+        "Whenever the user asks to create, configure, or register a trading setup or alert (e.g., 'crea un setup de compra en BTC', 'pon una alerta con estas condiciones', 'guarda este setup'), "
+        "OR when you formulate a formal trade recommendation with Entry, Stop Loss, and Take Profit, YOU MUST CALL `create_trading_setup`! "
+        "When calling `create_trading_setup`: "
+        "1. Ensure mathematical coherence: for LONG, stop_loss < entry_price < take_profit; for SHORT, take_profit < entry_price < stop_loss. "
+        "2. Include dynamic multi-indicator conditions in the `conditions` parameter reflecting the technical confirmations required (e.g., RSI zone, Squeeze Momentum state, ADX strength, candle volume). Do not leave conditions empty when the strategy requires technical validation. "
+        "3. Provide clear explanatory notes in `notes`. "
+        "You can also call `list_trading_setups` to view the user's active setups, `update_trading_setup` to adjust levels or invalidation criteria, and `delete_trading_setup` to cancel a setup.\n\n"
     )
     if web_search_enabled:
         base += (

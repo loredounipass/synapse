@@ -233,6 +233,16 @@ def nvidia_chat_stream(
                     yield {"type": "thought", "chunk": f"\n[\U0001F50D Buscando {label}: '{query}']\n"}
                 elif fn_name == "rename_chat_session":
                     yield {"type": "thought", "chunk": "\n[Actualizando el nombre de la sesión]\n"}
+                elif fn_name == "create_trading_setup":
+                    dir_s = args.get("direction", "LONG")
+                    sym_s = args.get("symbol", "")
+                    yield {"type": "thought", "chunk": f"\n[⚙️ Formulando y registrando setup {dir_s} para {sym_s} con confirmaciones técnicas]\n"}
+                elif fn_name == "list_trading_setups":
+                    yield {"type": "thought", "chunk": "\n[📋 Consultando setups de trading activos en la base de datos]\n"}
+                elif fn_name == "update_trading_setup":
+                    yield {"type": "thought", "chunk": "\n[🔄 Actualizando niveles o condiciones del setup]\n"}
+                elif fn_name == "delete_trading_setup":
+                    yield {"type": "thought", "chunk": "\n[🗑️ Cancelando/eliminando setup de trading]\n"}
                 elif fn_name == "get_selected_market_data":
                     provider = (
                         "yahoo"
@@ -266,6 +276,32 @@ def nvidia_chat_stream(
                         }
                     else:
                         yield {"type": "thought", "chunk": f"\n[No se pudo actualizar el título: {result.get('error')}]\n"}
+                elif fn_name == "create_trading_setup":
+                    yield {
+                        "type": "tool",
+                        "name": "create_trading_setup",
+                        "success": result.get("success"),
+                        "setup": result.get("setup"),
+                    }
+                elif fn_name == "list_trading_setups":
+                    yield {
+                        "type": "tool",
+                        "name": "list_trading_setups",
+                        "count": result.get("count"),
+                    }
+                elif fn_name == "update_trading_setup":
+                    yield {
+                        "type": "tool",
+                        "name": "update_trading_setup",
+                        "success": result.get("success"),
+                        "setup": result.get("setup"),
+                    }
+                elif fn_name == "delete_trading_setup":
+                    yield {
+                        "type": "tool",
+                        "name": "delete_trading_setup",
+                        "deleted": result.get("deleted"),
+                    }
                 elif fn_name == "get_selected_market_data":
                     yield {
                         "type": "tool",

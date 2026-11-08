@@ -6,7 +6,6 @@ import { toast } from "sonner"
 
 // Hooks de lógica desacoplada
 import { useWatchlistPrices } from "./hooks/useWatchlistPrices"
-import { usePriceAlerts } from "./hooks/usePriceAlerts"
 import { useDemoPortfolio } from "./hooks/useDemoPortfolio"
 import { get24hChangeFromHistory } from "./utils"
 
@@ -20,7 +19,9 @@ import { SidebarSeparator } from "./components/SidebarSeparator"
 import { SidebarFooter } from "./components/SidebarFooter"
 
 // Modales de acciones secundarias
-import { PriceAlertsModal } from "./modals/PriceAlertsModal"
+import { SetupsModal } from "@/components/setups/SetupsModal"
+import { SetupActivationDialog } from "@/components/setups/SetupActivationDialog"
+import { useSetups } from "@/components/setups/useSetups"
 import { PortfolioModal } from "./modals/PortfolioModal"
 import { ShortcutsModal } from "./modals/ShortcutsModal"
 
@@ -32,7 +33,7 @@ export default function DashboardSidebar({
   market = "crypto",
   timeframe = "15m",
   provider = "coinbase",
-  onCambiarMoneda = () => {},
+  onCambiarMoneda = () => { },
   isOpenMobile = false,
   setIsOpenMobile,
   isCollapsed = false,
@@ -48,14 +49,7 @@ export default function DashboardSidebar({
 
   // Lógica desacoplada en hooks especializados
   const { livePrices } = useWatchlistPrices(moneda?.symbol)
-  const {
-    alerts,
-    newAlertCondition,
-    setNewAlertCondition,
-    toggleAlert,
-    handleCreateAlert,
-    handleDeleteAlert,
-  } = usePriceAlerts(moneda?.symbol)
+  const setupsManager = useSetups({ activeSymbol: moneda?.symbol, enabled: isAuthenticated })
   const { portfolioPositions } = useDemoPortfolio(datos, moneda)
 
   // Cálculo del cambio 24h real del activo actualmente seleccionado
@@ -146,7 +140,7 @@ export default function DashboardSidebar({
             onScrollTo={scrollTo}
             onOpenAlerts={() => setShowAlertsModal(true)}
             onOpenPortfolio={() => setShowPortfolioModal(true)}
-            activeAlertsCount={alerts.filter((a) => a.active).length}
+            activeAlertsCount={setupsManager.activeCount}
           />
 
           {/* Separador entre Herramientas & IA y Top Mercados */}
@@ -180,18 +174,16 @@ export default function DashboardSidebar({
     <>
       {/* Sidebar Desktop (fijo a la izquierda con animación fluida 60fps) */}
       <aside
-        className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 bg-[#070c14]/95 border-r border-[#142335] backdrop-blur-xl transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width] overflow-hidden ${
-          isCollapsed ? "w-[68px]" : "w-64"
-        }`}
+        className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 bg-[#070c14]/95 border-r border-[#142335] backdrop-blur-xl transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width] overflow-hidden ${isCollapsed ? "w-[68px]" : "w-64"
+          }`}
       >
         {renderSidebarContent(false)}
       </aside>
 
       {/* Espaciador fantasma para contenido desktop perfectamente sincronizado */}
       <div
-        className={`hidden lg:block flex-shrink-0 transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width] overflow-hidden ${
-          isCollapsed ? "w-[68px]" : "w-64"
-        }`}
+        className={`hidden lg:block flex-shrink-0 transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width] overflow-hidden ${isCollapsed ? "w-[68px]" : "w-64"
+          }`}
       />
 
       {/* Sidebar Mobile (drawer deslizable con z-index superior al header y contenido 100% expandido) */}
@@ -208,16 +200,22 @@ export default function DashboardSidebar({
       )}
 
       {/* Modales de interfaz */}
-      <PriceAlertsModal
+      <SetupsModal
         isOpen={showAlertsModal}
         onClose={() => setShowAlertsModal(false)}
         symbol={moneda?.symbol}
-        alerts={alerts}
-        newAlertCondition={newAlertCondition}
-        setNewAlertCondition={setNewAlertCondition}
-        onCreateAlert={handleCreateAlert}
-        onToggleAlert={toggleAlert}
-        onDeleteAlert={handleDeleteAlert}
+        market={market}
+        provider={provider}
+        timeframe={timeframe}
+        currentPrice={datos?.precio}
+        setupsManager={setupsManager}
+      />
+
+      {/* Pop-up Global de Alerta: Setup Activado */}
+      <SetupActivationDialog
+        isOpen={Boolean(setupsManager.newlyActivatedSetup)}
+        onClose={setupsManager.dismissActivationAlert}
+        setup={setupsManager.newlyActivatedSetup}
       />
 
       <PortfolioModal
