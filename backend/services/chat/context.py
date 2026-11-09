@@ -100,9 +100,9 @@ def resolve_request_context(
 ) -> dict:
     """Resuelve todo lo comun a una llamada al API y lo devuelve en un dict.
 
-    `streaming=True` anade el header Accept: text/event-stream. No realiza la
-    peticion: solo prepara credenciales, modelo, sampling, system prompt,
-    herramientas y mensajes iniciales.
+    `streaming=True` anade el header Accept: text/event-stream solo si el modelo
+    tiene stream habilitado. No realiza la peticion: solo prepara credenciales,
+    modelo, sampling, system prompt, herramientas y mensajes iniciales.
     """
     api_key = get_api_key()
     if not api_key:
@@ -126,7 +126,10 @@ def resolve_request_context(
     if temperature is None:
         temperature = float(model_config.get("temperature", DEFAULT_TEMPERATURE))
     cfg_max = int(model_config.get("max_tokens", DEFAULT_MAX_TOKENS))
-    effective_max_tokens = CASUAL_MAX_TOKENS if intent == "casual" else (int(max_tokens) if max_tokens else cfg_max)
+    if intent == "casual":
+        effective_max_tokens = int(model_config.get("casual_max_tokens", CASUAL_MAX_TOKENS))
+    else:
+        effective_max_tokens = int(max_tokens) if max_tokens else cfg_max
     sampling = {"temperature": temperature}
     if model_config.get("top_p") is not None:
         sampling["top_p"] = float(model_config["top_p"])
@@ -138,7 +141,8 @@ def resolve_request_context(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
-    if streaming:
+    stream_response = bool(model_config.get("stream", True)) if streaming else False
+    if stream_response:
         headers["Accept"] = "text/event-stream"
 
     request_tools = list(CHAT_TOOLS)
@@ -158,8 +162,10 @@ def resolve_request_context(
     return {
         "api_key": api_key,
         "model_config": model_config,
+        "stream": stream_response,
         "model_id": model_id,
         "model_name": model_name,
+        "request_options": model_config.get("request_options", {}),
         "timeout": timeout,
         "system_prompt": system_prompt,
         "sampling": sampling,

@@ -26,11 +26,30 @@ MAX_TOOL_ROUNDS = 5
 MAX_CONTINUATIONS = 6
 
 
-def _iter_chunks(resp):
-    """Rinde cada chunk JSON de una respuesta SSE, saltando lineas vacias,
-    el centinela [DONE], las que no empiezan con 'data: ' y las que no son JSON
-    valido (comportamiento identical al try/except pass de los loops originales).
-    """
+def _iter_chunks(resp, streaming=True):
+    """Yield API chunks in a common shape for streamed and regular responses."""
+    if not streaming:
+        data = json.loads(resp.read().decode("utf-8"))
+        for choice in data.get("choices", []):
+            message = choice.get("message", {})
+            delta = {
+                key: message[key]
+                for key in ("content", "reasoning_content")
+                if message.get(key) is not None
+            }
+            if message.get("tool_calls"):
+                delta["tool_calls"] = [
+                    {**tool_call, "index": index}
+                    for index, tool_call in enumerate(message["tool_calls"])
+                ]
+            yield {
+                "choices": [{
+                    "finish_reason": choice.get("finish_reason"),
+                    "delta": delta,
+                }],
+            }
+        return
+
     for raw_line in resp:
         line = raw_line.decode("utf-8").strip()
         if not line or line == "data: [DONE]":
@@ -68,6 +87,7 @@ def nvidia_chat_stream(
 
     model_id = ctx["model_id"]
     model_name = ctx["model_name"]
+    request_options = ctx["request_options"]
     timeout = ctx["timeout"]
     sampling = ctx["sampling"]
     effective_max_tokens = ctx["effective_max_tokens"]
@@ -75,6 +95,7 @@ def nvidia_chat_stream(
     headers = ctx["headers"]
     request_tools = ctx["request_tools"]
     required_initial_tool = ctx["required_initial_tool"]
+    stream_response = ctx["stream"]
     initial_messages = ctx["initial_messages"]
 
     messages = list(initial_messages)
@@ -94,11 +115,12 @@ def nvidia_chat_stream(
                 "messages": messages,
                 **sampling,
                 "max_tokens": effective_max_tokens,
+                **request_options,
                 # `tools` en TODAS las rondas: si desaparece, el modelo emite el
                 # tool_call como texto (XML) y se filtra al usuario.
                 "tools": request_tools,
                 "tool_choice": tool_choice,
-                "stream": True,
+                "stream": stream_response,
             }
             req = Request(url, data=json.dumps(payload_dict).encode("utf-8"), headers=headers, method="POST")
 
@@ -106,7 +128,7 @@ def nvidia_chat_stream(
             round_content = []
             finish_reason = None
             with urlopen(req, timeout=timeout) as resp:
-                for chunk_json in _iter_chunks(resp):
+                for chunk_json in _iter_chunks(resp, stream_response):
                     try:
                         choices = chunk_json.get("choices", [])
                         if not choices:
@@ -170,13 +192,14 @@ def nvidia_chat_stream(
                         "messages": req_messages,
                         **sampling,
                         "max_tokens": effective_max_tokens,
-                        "stream": True,
+                        **request_options,
+                        "stream": stream_response,
                     }
                     req2 = Request(url, data=json.dumps(cont_payload).encode("utf-8"), headers=headers, method="POST")
                     more = []
                     finish_reason = None
                     with urlopen(req2, timeout=timeout) as resp2:
-                        for cj in _iter_chunks(resp2):
+                        for cj in _iter_chunks(resp2, stream_response):
                             try:
                                 ch2 = cj.get("choices", [])
                                 if not ch2:
@@ -184,6 +207,8 @@ def nvidia_chat_stream(
                                 if ch2[0].get("finish_reason"):
                                     finish_reason = ch2[0]["finish_reason"]
                                 d2 = ch2[0].get("delta", {})
+                                if d2.get("reasoning_content"):
+                                    yield {"type": "thought", "chunk": d2["reasoning_content"]}
                                 if d2.get("content"):
                                     more.append(d2["content"])
                                     yield {"type": "content", "chunk": d2["content"]}
@@ -335,11 +360,12 @@ def nvidia_chat_stream(
                 "messages": messages,
                 **sampling,
                 "max_tokens": effective_max_tokens,
-                "stream": True,
+                **request_options,
+                "stream": stream_response,
             }
             req = Request(url, data=json.dumps(final_payload).encode("utf-8"), headers=headers, method="POST")
             with urlopen(req, timeout=timeout) as resp:
-                for chunk_json in _iter_chunks(resp):
+                for chunk_json in _iter_chunks(resp, stream_response):
                     try:
                         choices = chunk_json.get("choices", [])
                         if not choices:

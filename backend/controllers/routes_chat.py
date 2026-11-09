@@ -106,7 +106,9 @@ def chat_endpoint():
     if current_session is None:
         return jsonify({'error': 'Chat session not found.'}), 404
 
-    model_key = data.get('model', state['selected_model'])
+    selected_model = state.get('selected_model')
+    default_model = selected_model if selected_model in AVAILABLE_MODELS else 'nvidia-nemotron'
+    model_key = data.get('model', default_model)
     if not isinstance(model_key, str) or model_key not in AVAILABLE_MODELS:
         return jsonify({'error': 'Unknown chat model.'}), 400
     symbol = data.get('symbol', 'BTCUSDT')

@@ -43,6 +43,7 @@ def nvidia_chat(
     )
     model_id = ctx["model_id"]
     model_name = ctx["model_name"]
+    request_options = ctx["request_options"]
     timeout = ctx["timeout"]
     sampling = ctx["sampling"]
     effective_max_tokens = ctx["effective_max_tokens"]
@@ -68,6 +69,7 @@ def nvidia_chat(
                 "messages": messages,
                 **sampling,
                 "max_tokens": effective_max_tokens,
+                **request_options,
                 # `tools` se mantiene en TODAS las rondas: si desaparece, el modelo
                 # emite el tool_call como texto (XML) y se filtra al usuario.
                 "tools": request_tools,
@@ -124,6 +126,7 @@ def nvidia_chat(
             "messages": messages,
             **sampling,
             "max_tokens": effective_max_tokens,
+            **request_options,
         }).encode("utf-8")
         req_final = Request(url, data=payload_final, headers=headers, method="POST")
         with urlopen(req_final, timeout=timeout) as resp_final:
@@ -147,6 +150,7 @@ def nvidia_chat(
                 "messages": initial_messages,
                 **sampling,
                 "max_tokens": effective_max_tokens,
+                **request_options,
             }).encode("utf-8")
             req_retry = Request(url, data=payload_no_tools, headers=headers, method="POST")
             try:

@@ -47,7 +47,24 @@ AVAILABLE_MODELS = {
         "temperature": 1.0,
         "top_p": 0.95,
         "max_tokens": 49152,
+        "stream": True,
         "timeout": 180,
+    },
+    "nvidia-nemotron-super-vl": {
+        "id": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+        "name": "Nemotron 3.5 Super VL 120B A12B",
+        "provider": "NVIDIA",
+        "free": True,
+        "reasoning": True,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "max_tokens": 49152,
+        "stream": True,
+        "timeout": 240,
+        "request_options": {
+            "seed": 42,
+            "chat_template_kwargs": {"enable_thinking": True},
+        },
     },
     "nvidia-nemotron-bolt": {
         "id": "nvidia/nemotron-3.5-bolt-e4b",
@@ -58,6 +75,7 @@ AVAILABLE_MODELS = {
         "temperature": 1.0,
         "top_p": 0.95,
         "max_tokens": 32768,
+        "stream": True,
         "timeout": 180,
     },
     "nvidia-nemotron-ultra": {
@@ -69,6 +87,7 @@ AVAILABLE_MODELS = {
         "temperature": 1.0,
         "top_p": 0.95,
         "max_tokens": 49152,
+        "stream": True,
         "timeout": 240,
     },
     "meta-muse": {
@@ -81,6 +100,7 @@ AVAILABLE_MODELS = {
         "top_p": 0.95,
         "top_k": 64,
         "max_tokens": 49152,
+        "stream": True,
         "timeout": 240,
     },
     "google-diffusiongemma": {
@@ -92,7 +112,22 @@ AVAILABLE_MODELS = {
         "temperature": 1.0,
         "top_p": 0.95,
         "max_tokens": 32768,
+        "stream": True,
         "timeout": 180,
+    },
+    "minimax-m3-1-flash": {
+        "id": "minimaxai/minimax-m3.1-flash",
+        "name": "MiniMax M3.1 Flash",
+        "provider": "MiniMax",
+        "free": False,
+        "reasoning": True,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "max_tokens": 262144,
+        "casual_max_tokens": 262144,
+        "stream": True,
+        "timeout": 180,
+        "request_options": {"seed": 0},
     },
 }
 

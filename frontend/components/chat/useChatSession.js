@@ -205,10 +205,12 @@ export function useChatSession({
       } catch (e) {
         setModels([
           { key: "nvidia-nemotron", name: "Nemotron 3 Nano Omni", provider: "NVIDIA", free: true, reasoning: true },
+          { key: "nvidia-nemotron-super-vl", name: "Nemotron 3.5 Super VL 120B A12B", provider: "NVIDIA", free: true, reasoning: true },
           { key: "nvidia-nemotron-bolt", name: "Nemotron 3.5 Bolt E4B", provider: "NVIDIA", free: true, reasoning: false },
           { key: "nvidia-nemotron-ultra", name: "Nemotron 3 Ultra 550B", provider: "NVIDIA", free: true, reasoning: true },
           { key: "meta-muse", name: "Muse Glimmer 30B", provider: "Meta", free: true, reasoning: true },
           { key: "google-diffusiongemma", name: "DiffusionGemma 26B", provider: "Google", free: true, reasoning: false },
+          { key: "minimax-m3-1-flash", name: "MiniMax M3.1 Flash", provider: "MiniMax", free: false, reasoning: true },
         ])
       }
     }
@@ -558,6 +560,8 @@ export function useChatSession({
         stallTimer = null
       }
     }
+    let pacerActive = false
+    let resolvePacerDrained = null
 
     setStreamingThought("")
     setIsThinking(true)
@@ -613,8 +617,7 @@ export function useChatSession({
       let targetContent = ""
       let displayedChars = 0
       let streamFinished = false
-      let pacerActive = true
-      let resolvePacerDrained = null
+      pacerActive = true
 
       const pacerCompletionPromise = new Promise((resolve) => {
         resolvePacerDrained = resolve

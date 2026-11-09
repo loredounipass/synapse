@@ -11,6 +11,13 @@ chat_sessions_bp = Blueprint("chat_sessions", __name__)
 MODEL_KEYS = set(AVAILABLE_MODELS)
 
 
+def _get_chat_state(owner_id):
+    state = chat_store.get_state(owner_id)
+    if state.get("selected_model") not in MODEL_KEYS:
+        state["selected_model"] = "nvidia-nemotron"
+    return state
+
+
 def _owner_id():
     user = getattr(g, "current_user", None)
     if user and user.get("id"):
@@ -30,7 +37,7 @@ def get_chat_state():
     owner_id = _owner_id()
     if isinstance(owner_id, tuple):
         return owner_id[1]
-    return jsonify(chat_store.get_state(owner_id))
+    return jsonify(_get_chat_state(owner_id))
 
 
 @chat_sessions_bp.post("/api/chat/state/import")
@@ -48,7 +55,7 @@ def import_legacy_state():
         web_search_enabled=data.get("web_search_enabled"),
         model_keys=MODEL_KEYS,
     )
-    return jsonify({"imported": imported, **chat_store.get_state(owner_id)})
+    return jsonify({"imported": imported, **_get_chat_state(owner_id)})
 
 
 @chat_sessions_bp.patch("/api/chat/preferences")
@@ -70,7 +77,7 @@ def update_chat_preferences():
     if selected_model is None and web_search_enabled is None:
         return jsonify({"error": "At least one preference is required."}), 400
     chat_store.update_preferences(owner_id, selected_model, web_search_enabled)
-    return jsonify(chat_store.get_state(owner_id))
+    return jsonify(_get_chat_state(owner_id))
 
 
 @chat_sessions_bp.post("/api/chat/sessions")
