@@ -7,12 +7,11 @@
  * Las rutas @public (register, login, refresh) usan `skipAuth: true` para
  * que el interceptor de httpClient NO inyecte el Bearer token.
  */
-import { httpRequest } from "./httpClient"
+import { httpRequest, performTokenRefresh } from "./httpClient"
 import { ENDPOINTS } from "./endpoints"
 import {
   getRefreshToken,
   setSession,
-  updateTokens,
   clearSession,
   getAccessToken,
 } from "../auth/tokenManager"
@@ -53,6 +52,8 @@ export async function loginUser(credentials) {
 
 /**
  * POST /api/auth/refresh — Renueva el access token usando el refresh token.
+ * Pasa a través del deduplicador de `performTokenRefresh()` de httpClient para
+ * evitar condiciones de carrera si concurren múltiples llamadas.
  * @returns {Promise<{ access_token, refresh_token, token_type, expires_in }>}
  */
 export async function refreshAccessToken() {
@@ -60,15 +61,7 @@ export async function refreshAccessToken() {
   if (!refresh_token) {
     throw new Error("No refresh token available.")
   }
-  const response = await httpRequest(ENDPOINTS.authRefresh(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: { refresh_token },
-    skipAuth: true,
-    retries: 0,
-  })
-  updateTokens(response)
-  return response
+  return performTokenRefresh()
 }
 
 /**

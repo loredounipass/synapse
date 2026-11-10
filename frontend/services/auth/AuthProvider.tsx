@@ -16,6 +16,7 @@ import {
   isAuthenticated as checkIsAuthenticated,
   SESSION_CHANGE_EVENT,
   AUTH_REQUIRED_EVENT,
+  AUTH_SYNC_CHANNEL,
 } from "./tokenManager"
 import {
   loginUser,
@@ -65,6 +66,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     refreshTimerRef.current = setTimeout(async () => {
       if (isRefreshingRef.current || !hasRefreshToken()) return
+
+      // Sincronizar por si otra pestaña ya renovó el token en localStorage
+      syncAuthState()
+      if (!isAccessTokenExpiringSoon(120_000)) {
+        scheduleProactiveRefresh()
+        return
+      }
+
       isRefreshingRef.current = true
       try {
         await refreshAccessToken()
@@ -84,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Intenta refrescar inmediatamente si está por expirar o ya expiró
   const checkAndRefresh = useCallback(async () => {
     if (!hasRefreshToken() || isRefreshingRef.current) return
+    syncAuthState()
     if (isAccessTokenExpiringSoon(120_000)) {
       isRefreshingRef.current = true
       try {
@@ -167,10 +177,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("focus", handleVisibilityOrFocus)
     document.addEventListener("visibilitychange", handleVisibilityOrFocus)
 
+    // Canal BroadcastChannel para sincronización inmediata entre pestañas
+    let authChannel: BroadcastChannel | null = null
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        authChannel = new BroadcastChannel(AUTH_SYNC_CHANNEL)
+        authChannel.onmessage = (event) => {
+          if (event?.data?.type === "SESSION_REFRESHED") {
+            syncAuthState()
+            scheduleProactiveRefresh()
+          } else if (event?.data?.type === "AUTH_LOGOUT") {
+            syncAuthState()
+          }
+        }
+      }
+    } catch {
+      // Ignorar si BroadcastChannel no está disponible en este entorno
+    }
+
     return () => {
       isMounted = false
       if (refreshTimerRef.current) {
         clearTimeout(refreshTimerRef.current)
+      }
+      if (authChannel) {
+        authChannel.close()
       }
       window.removeEventListener(SESSION_CHANGE_EVENT, handleSessionChange)
       window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired)

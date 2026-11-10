@@ -61,6 +61,17 @@ _auth_redis_lock = threading.Lock()
 _auth_redis_missing_library = False
 _last_auth_redis_failure = 0.0
 _REDIS_RETRY_COOLDOWN = 5.0  # seconds before attempting reconnection
+_redis_degraded_checks_count = 0
+_last_degraded_log_time = 0.0
+
+
+def get_auth_redis_status() -> dict:
+    """Return health status and telemetry for the Auth Redis connection."""
+    client = _get_auth_redis()
+    return {
+        "connected": client is not None,
+        "degraded_checks_count": _redis_degraded_checks_count,
+    }
 
 
 def _get_auth_redis():
@@ -249,7 +260,7 @@ def is_blacklisted(jti: str) -> bool:
     """Check whether the token identified by *jti* has been blacklisted.
 
     If Redis is unavailable the function **fails open** (returns ``False``)
-    to avoid locking every user out, but logs a warning.
+    to avoid locking every user out, but logs a rate-limited warning and tracks degraded state.
 
     Parameters
     ----------
@@ -261,23 +272,35 @@ def is_blacklisted(jti: str) -> bool:
     bool
         ``True`` if the token is blacklisted.
     """
+    global _redis_degraded_checks_count, _last_degraded_log_time
     client = _get_auth_redis()
     if client is None:
-        logger.warning(
-            "[AuthRedis] Redis unavailable — cannot verify blacklist for jti=%s. "
-            "Failing open.",
-            jti,
-        )
+        _redis_degraded_checks_count += 1
+        now = time.time()
+        if now - _last_degraded_log_time >= 10.0:
+            _last_degraded_log_time = now
+            logger.warning(
+                "[AuthRedis] Redis unavailable — cannot verify blacklist for jti=%s. "
+                "Failing open (degraded_checks=%d).",
+                jti,
+                _redis_degraded_checks_count,
+            )
         return False
     key = f"{REDIS_BLACKLIST_PREFIX}:{jti}"
     try:
         return bool(client.exists(key))
     except Exception as exc:
-        logger.warning(
-            "[AuthRedis] Redis error during blacklist check for jti=%s: %s. Failing open.",
-            jti,
-            exc,
-        )
+        _redis_degraded_checks_count += 1
+        now = time.time()
+        if now - _last_degraded_log_time >= 10.0:
+            _last_degraded_log_time = now
+            logger.warning(
+                "[AuthRedis] Redis error during blacklist check for jti=%s: %s. "
+                "Failing open (degraded_checks=%d).",
+                jti,
+                exc,
+                _redis_degraded_checks_count,
+            )
         return False
 
 
@@ -334,9 +357,16 @@ def store_refresh_token(user_id: str, jti: str) -> None:
         return
     key = f"{REDIS_REFRESH_PREFIX}:{user_id}:{jti}"
     try:
-        # Enforce maximum concurrent active sessions per user
+        # Enforce maximum concurrent active sessions per user (full iterative SCAN)
         pattern = f"{REDIS_REFRESH_PREFIX}:{user_id}:*"
-        cursor, keys = client.scan(cursor=0, match=pattern, count=100)
+        keys = []
+        cursor = 0
+        while True:
+            cursor, batch = client.scan(cursor=cursor, match=pattern, count=100)
+            if batch:
+                keys.extend(batch)
+            if cursor == 0:
+                break
         if keys and len(keys) >= MAX_SESSIONS_PER_USER:
             excess = len(keys) - MAX_SESSIONS_PER_USER + 1
             if excess > 0:

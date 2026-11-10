@@ -42,7 +42,7 @@ function notifyAuthRequired(detail = "Session required") {
 // Promesa compartida para deduplicar peticiones simultáneas de refresh token
 let refreshPromise = null
 
-async function performTokenRefresh() {
+export async function performTokenRefresh() {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const refreshToken = getRefreshToken()
@@ -75,7 +75,7 @@ async function performTokenRefresh() {
         }
 
         updateTokens(data)
-        return data.access_token
+        return data
       } catch (err) {
         // No destruir la sesión si fue solo un corte transitorio de red o timeout
         const isNetworkErr = err.name === "AbortError" || /fetch|network|failed/i.test(err.message || "")
@@ -169,7 +169,8 @@ export async function httpRequest(
         // Tokens revocados, inválidos o cuentas desactivadas van directo al login.
         if (errorMsg.includes("expired")) {
           try {
-            const newToken = await performTokenRefresh()
+            const tokenData = await performTokenRefresh()
+            const newToken = typeof tokenData === "string" ? tokenData : tokenData?.access_token
             return await httpRequest(path, {
               method,
               headers: { ...headers, Authorization: `Bearer ${newToken}` },
@@ -244,7 +245,8 @@ export async function rawRequest(path, init = {}, { skipAuth = false } = {}) {
     // Renovar preventivamente si faltan menos de 30s para que no se corte el stream a mitad
     if (token && getRefreshToken() && isAccessTokenExpiringSoon(30_000)) {
       try {
-        token = await performTokenRefresh()
+        const tokenData = await performTokenRefresh()
+        token = typeof tokenData === "string" ? tokenData : tokenData?.access_token
       } catch {
         token = getAccessToken()
       }
@@ -255,5 +257,29 @@ export async function rawRequest(path, init = {}, { skipAuth = false } = {}) {
   }
 
   finalInit.headers = finalHeaders
-  return fetch(buildUrl(path), finalInit)
+  let res = await fetch(buildUrl(path), finalInit)
+
+  // Manejo de 401 en rawRequest (SSE / chat / audio)
+  if (res.status === 401 && !skipAuth && getRefreshToken()) {
+    const clone = res.clone()
+    const errorText = (await clone.text().catch(() => "")) || ""
+    const isExpired = errorText.toLowerCase().includes("expired")
+
+    if (isExpired) {
+      try {
+        const tokenData = await performTokenRefresh()
+        const newToken = typeof tokenData === "string" ? tokenData : tokenData?.access_token
+        const retryHeaders = { ...finalHeaders, Authorization: `Bearer ${newToken}` }
+        res = await fetch(buildUrl(path), { ...finalInit, headers: retryHeaders })
+      } catch (refreshErr) {
+        clearSession()
+        notifyAuthRequired("Session expired. Please log in again.")
+      }
+    } else {
+      clearSession()
+      notifyAuthRequired("Authentication required")
+    }
+  }
+
+  return res
 }

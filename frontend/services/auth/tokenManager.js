@@ -29,6 +29,9 @@ export const SESSION_CHANGE_EVENT = "synapse:session-change"
 /** Evento custom despachado cuando el interceptor HTTP detecta un 401 irrecuperable. */
 export const AUTH_REQUIRED_EVENT = "synapse:auth-required"
 
+/** Nombre del canal BroadcastChannel para sincronizar sesiones entre pestañas del navegador. */
+export const AUTH_SYNC_CHANNEL = "synapse_auth_sync"
+
 // ── Getters ─────────────────────────────────────────────────────────
 
 export function getAccessToken() {
@@ -105,6 +108,7 @@ export function setSession(authResponse) {
     // localStorage no disponible (incognito en Safari, etc.)
   }
   dispatchSessionChange()
+  broadcastSessionSync("SESSION_REFRESHED")
 }
 
 /**
@@ -123,6 +127,7 @@ export function updateTokens(tokenResponse) {
     // ignore
   }
   dispatchSessionChange()
+  broadcastSessionSync("SESSION_REFRESHED")
 }
 
 /** Limpia toda la sesión (logout o 401 irrecuperable). */
@@ -136,6 +141,7 @@ export function clearSession() {
     // ignore
   }
   dispatchSessionChange()
+  broadcastSessionSync("AUTH_LOGOUT")
 }
 
 // ── Estado derivado ─────────────────────────────────────────────────
@@ -167,6 +173,18 @@ export function hasActiveSession() {
 }
 
 // ── Utilidades internas ─────────────────────────────────────────────
+
+function broadcastSessionSync(type) {
+  if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+    try {
+      const channel = new BroadcastChannel(AUTH_SYNC_CHANNEL)
+      channel.postMessage({ type, timestamp: Date.now() })
+      channel.close()
+    } catch {
+      // ignore
+    }
+  }
+}
 
 function dispatchSessionChange() {
   if (typeof window !== "undefined") {
